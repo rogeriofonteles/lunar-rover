@@ -1,0 +1,16 @@
+{
+  "files.associations": {
+      "qframe": "cpp",
+      "qimage": "cpp"
+  },  
+  "editor.formatOnSave": true,
+  "clang-format.executable": "clang-format-19",
+  "python.autoComplete.extraPaths": [
+    "/home/rogerio/lunar_rover/install/turtlesim/lib/python3.12/site-packages",
+    "/opt/ros/jazzy/lib/python3.12/site-packages"
+  ],
+  "python.analysis.extraPaths": [
+    "/home/rogerio/lunar_rover/install/turtlesim/lib/python3.12/site-packages",
+    "/opt/ros/jazzy/lib/python3.12/site-packages"
+  ],
+}
