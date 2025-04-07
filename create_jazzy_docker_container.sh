@@ -15,11 +15,12 @@ docker run -it \
     --volume /tmp/runtime-rogerio:/tmp/runtime-rogerio \
     --volume /tmp/.X11-unix:/tmp/.X11-unix \
     --volume ~/lunar-rover/lunar_rover:/home/rogerio/lunar_rover \
+    --volume ~/lunar-rover/clearpath_simulator:/home/rogerio/ext/src/clearpath_simulator \
     --device /dev/dri \
     --group-add video \
     --group-add render \
     --privileged \
-    lunar-rover-jazzy:v0.0.1 \
+    lunar-rover-jazzy:v0.0.2 \
         fish -c "$(cat <<'FISH'
             if not functions -q _ros2_fish_greeting
                 echo "🔧 Installing ros2.fish plugin..."

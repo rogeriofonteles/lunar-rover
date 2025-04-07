@@ -7,7 +7,7 @@ RUN apt-get update && apt-get install -y \
     apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Install ros deps for controllers
-RUN apt-get install \
+RUN apt-get update && apt-get install -y \
     ros-jazzy-controller-manager \
     ros-jazzy-joint-state-publisher \
     ros-jazzy-joint-state-publisher-gui \
