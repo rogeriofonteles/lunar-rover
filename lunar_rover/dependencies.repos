@@ -1,0 +1,29 @@
+repositories:
+  clearpath_simulator:
+    type: git
+    url: https://github.com/clearpathrobotics/clearpath_simulator.git
+    version: jazzy
+  clearpath_config:
+    type: git
+    url: https://github.com/clearpathrobotics/clearpath_config.git
+    version: jazzy
+  clearpath_msgs:
+    type: git
+    url: https://github.com/clearpathrobotics/clearpath_msgs.git
+    version: jazzy
+  clearpath_robot:
+    type: git
+    url: https://github.com/clearpathrobotics/clearpath_robot.git
+    version: jazzy
+  micro_ros_agent:
+    type: git
+    url: https://github.com/micro-ROS/micro-ROS-Agent.git
+    version: jazzy
+  umx_driver:
+    type: git
+    url: https://github.com/ros-drivers/um7.git
+    version: ros2
+  serial:
+    type: git
+    url: https://github.com/RoverRobotics-forks/serial-ros2.git
+    version: master

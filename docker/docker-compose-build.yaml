@@ -1,0 +1,10 @@
+services:
+  lunar_rover:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        USERNAME: ${USERNAME}
+        UID: ${UID}
+        GID: ${GID}
+    image: lunar-rover-jazzy:v0.0.3
