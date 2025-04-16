@@ -1,8 +1,8 @@
 services:
-  lunar_rover:
-    image: lunar-rover-jazzy:v0.0.3
-    container_name: lunar-rover-jazzy
-    hostname: lunar-rover-jazzy
+  drake:
+    image: ${CONTAINER_BASE_NAME}-drake:v0.0.3
+    container_name: ${CONTAINER_NAME}
+    hostname: ${CONTAINER_NAME}
     privileged: true
     environment:
       TERM: xterm-256color
@@ -14,11 +14,10 @@ services:
     volumes:
       - /tmp/.X11-unix:/tmp/.X11-unix
       - /tmp/runtime-rogerio:/tmp/runtime-rogerio
-      - ~/lunar-rover/lunar_rover:/home/rogerio/lunar_rover
-      - ~/lunar-rover/config/robot.yaml:/home/rogerio/clearpath/robot.yaml
-      - ~/lunar-rover/config/dependencies.repos:/dependencies.repos
-      - ~/lunar-rover/docker/scripts/setup_container.sh:/setup_container.sh
-      - ~/lunar-rover/docker/scripts/entrypoint.fish:/entrypoint.fish
+      - ~/lunar-rover/drake:/home/rogerio/drake
+      - ~/lunar-rover/docker/${FOLDER_NAME}/scripts/setup_container.sh:/setup_container.sh
+    ports:
+      - 7000-7010:7000-7010
     devices:
       - /dev/dri
     group_add:

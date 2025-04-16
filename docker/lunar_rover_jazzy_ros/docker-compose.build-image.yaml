@@ -5,6 +5,5 @@ services:
       dockerfile: Dockerfile
       args:
         USERNAME: ${USERNAME}
-        UID: ${UID}
-        GID: ${GID}
-    image: lunar-rover-jazzy:v0.0.3
+        MY_UID: ${MY_UID}        
+    image: ${CONTAINER_BASE_NAME}-ros:v0.0.3

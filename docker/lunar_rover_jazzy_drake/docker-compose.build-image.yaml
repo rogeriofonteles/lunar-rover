@@ -1,0 +1,9 @@
+services:
+  lunar_rover:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        USERNAME: ${USERNAME}
+        MY_UID: ${MY_UID}
+    image: ${CONTAINER_BASE_NAME}-drake:v0.0.3

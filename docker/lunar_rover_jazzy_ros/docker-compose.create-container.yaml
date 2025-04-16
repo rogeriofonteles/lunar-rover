@@ -1,0 +1,28 @@
+services:
+  lunar_rover:
+    image: lunar-rover-jazzy:v0.0.3
+    container_name: ${CONTAINER_NAME}
+    hostname: ${CONTAINER_NAME}
+    privileged: true
+    environment:
+      TERM: xterm-256color
+      DISPLAY: $DISPLAY
+      QT_X11_NO_MITSHM: 1
+      XDG_RUNTIME_DIR: /tmp/runtime-rogerio
+      __NV_PRIME_RENDER_OFFLOAD: 1
+      __GLX_VENDOR_LIBRARY_NAME: nvidia
+    volumes:
+      - /tmp/.X11-unix:/tmp/.X11-unix
+      - /tmp/runtime-rogerio:/tmp/runtime-rogerio
+      - ~/lunar-rover/lunar_rover:/home/rogerio/lunar_rover
+      - ~/lunar-rover/config/robot.yaml:/home/rogerio/clearpath/robot.yaml
+      - ~/lunar-rover/config/dependencies.repos:/dependencies.repos
+      - ~/lunar-rover/docker/${FOLDER_NAME}/scripts/setup_container.sh:/setup_container.sh
+      - ~/lunar-rover/docker/scripts/entrypoint.fish:/entrypoint.fish
+    devices:
+      - /dev/dri
+    group_add:
+      - video
+      - render
+    gpus: all
+    command: ["/bin/bash", "/setup_container.sh"]
