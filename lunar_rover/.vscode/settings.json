@@ -1,7 +1,8 @@
 {
   "files.associations": {
-      "qframe": "cpp",
-      "qimage": "cpp"
+    "qframe": "cpp",
+    "qimage": "cpp",
+    "chrono": "cpp"
   },  
   "editor.formatOnSave": true,
   "clang-format.executable": "clang-format-19",
