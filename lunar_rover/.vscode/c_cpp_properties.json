@@ -5,7 +5,9 @@
             "includePath": [
                 "${workspaceFolder}/**",
                 "/opt/ros/jazzy/include/**",
-                "/usr/include/x86_64-linux-gnu/**"
+                "/usr/include/x86_64-linux-gnu/**",
+                "${workspaceFolder}/src/**",
+                "${workspaceFolder}/install/kinematic_path/**"
             ],
             "defines": [],
             "compilerPath": "/usr/bin/gcc",
