@@ -16,8 +16,8 @@ private:
   void publishVelocity();
   void wheelVelocitiesCallback(const kinematic_path::msg::WheelVelocities::SharedPtr msg);
 
-  float right_wheel_vel_;
-  float left_wheel_vel_;
+  float right_wheel_angular_vel_;
+  float left_wheel_angular_vel_;
   rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr cmd_vel_pub_;
   rclcpp::Subscription<kinematic_path::msg::WheelVelocities>::SharedPtr wheel_vels_sub_;
 };

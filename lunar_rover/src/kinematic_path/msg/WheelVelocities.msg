@@ -1,2 +1,2 @@
-float32 left_wheel_vel
-float32 right_wheel_vel
+float32 left_wheel_angular_vel
+float32 right_wheel_angular_vel
