@@ -14,13 +14,28 @@
           <izz>20</izz>
         </inertia>
       </inertial>
+      <!-- Simplified box collision for the rover body (above wheels) -->
       <collision name="base_link_collision">
-        <pose>0 0 0 0 -0 0</pose>
+        <pose>0 0 0.8 0 0 0</pose>
         <geometry>
-          <mesh>
-            <uri>model://perseverance/resources/perseverance.dae</uri>
-          </mesh>
+          <box>
+            <size>2.0 2.0 0.8</size>
+          </box>
         </geometry>
+        <surface>
+          <contact>
+            <ode>
+              <kp>1e+07</kp>
+              <kd>1</kd>
+            </ode>
+          </contact>
+          <friction>
+            <ode>
+              <mu>0.5</mu>
+              <mu2>0.5</mu2>
+            </ode>
+          </friction>
+        </surface>
       </collision>
       <visual name="base_link_visual">
         <geometry>

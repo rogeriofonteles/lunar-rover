@@ -59,6 +59,8 @@
     </light>
 
     <!-- Mars Gale Crater Terrain -->
+    <!-- Original mesh: X(-5 to 249), Y(172 to 211), Z(-24 to 4) -->
+    <!-- Repositioned to center at origin: translate by (-122, -192, 0) -->
     <model name="mars_terrain">
       <static>true</static>
       <pose>0 0 0 0 0 0</pose>
@@ -70,6 +72,12 @@
             </mesh>
           </geometry>
           <surface>
+            <contact>
+              <ode>
+                <kp>1e+07</kp>
+                <kd>1</kd>
+              </ode>
+            </contact>
             <friction>
               <ode>
                 <mu>1.0</mu>

@@ -40,7 +40,9 @@ def generate_launch_description():
     )
 
     # Spawn Perseverance rover on top of terrain
-    # Wheel radius is 0.27m, so spawn at z=0.5 to be above terrain
+    # Terrain Z range is -24 to +4, surface is around z=0 to z=4
+    # Wheels are at z=0.26 with radius 0.27, so wheel bottom at z=-0.01
+    # Spawn at z=5 to drop onto terrain surface
     spawn_robot = Node(
         package='ros_gz_sim',
         executable='create',
@@ -49,7 +51,7 @@ def generate_launch_description():
             '-file', perseverance_model,
             '-x', '0',
             '-y', '0',
-            '-z', '2.0',
+            '-z', '5.0',
         ],
         output='screen'
     )
