@@ -2,7 +2,7 @@
 
 set -e
 
-# Download clearpath simulator dependencies
+# Download external dependencies
 vcs import ext/src < /dependencies.repos
 
 source /opt/ros/jazzy/setup.bash
@@ -10,9 +10,9 @@ source /opt/ros/jazzy/setup.bash
 # rosdep
 cd ext
 rosdep update
-rosdep install -y --from-paths src --ignore-src --skip-keys "inventus_bmu" --rosdistro jazzy
+rosdep install -y --from-paths src --ignore-src --rosdistro jazzy
 
-#Compile clearpath packages
+# Compile external packages
 colcon build
 
 echo "✅ Setup complete."

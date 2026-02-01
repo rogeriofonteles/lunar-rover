@@ -7,7 +7,7 @@ RUN apt-get update && apt-get install -y \
     clang-format-19 && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Install ros deps for controllers
+# Install ros deps for controllers and simulation
 RUN apt-get update && apt-get install -y \
     ros-jazzy-controller-manager \
     ros-jazzy-joint-state-publisher \
@@ -16,11 +16,9 @@ RUN apt-get update && apt-get install -y \
     ros-jazzy-can-msgs \
     ros-jazzy-velocity-controllers \
     ros-jazzy-joint-trajectory-controller \
-    ros-jazzy-clearpath-common \
-    ros-jazzy-clearpath-platform-msgs \
-    ros-jazzy-clearpath-motor-msgs \
-    ros-jazzy-clearpath-ros2-socketcan-interface \
-    ros-jazzy-serial-driver
+    ros-jazzy-serial-driver \
+    ros-jazzy-xacro \
+    ros-jazzy-robot-state-publisher
 
 # Build args passed in at build time
 ARG USERNAME=rogerio
@@ -52,6 +50,3 @@ WORKDIR /home/$USERNAME
 RUN mkdir -p /home/$USERNAME/ext/src && \
     chown -R $USERNAME:$USERNAME /home/$USERNAME/ext
 
-# Create the clearpath folder and chown to USERNAME
-RUN mkdir -p /home/$USERNAME/clearpath && \
-    chown -R $USERNAME:$USERNAME /home/$USERNAME/clearpath

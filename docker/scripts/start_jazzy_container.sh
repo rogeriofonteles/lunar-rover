@@ -5,7 +5,7 @@
 # ./start_jazzy_container.sh <service_name> <entrypoint_file>
 
 # Parse the config yaml file into env vars
-yq eval '. | to_entries | .[] | "\(.key)=\(.value)"' ~/lunar-rover/docker/config/project-config.yaml > .env
+yq -r '. | to_entries | .[] | "\(.key)=\(.value)"' ~/Projects/lunar-rover/docker/config/project-config.yaml > .env
 # Source env vars
 source .env
 # Set folder name according to the required service
