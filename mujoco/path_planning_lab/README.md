@@ -4,12 +4,81 @@ Abra `index.html` no navegador. A página funciona também por `file://`: os
 dados dos gráficos estão em `data.js` e os vídeos são arquivos MP4 locais.
 Nenhuma seleção na página dispara uma simulação ou altera os resultados.
 
+## Escolher o caso e entender as diferenças
+
+O seletor **Caso do experimento** troca os resultados registrados. Cada caso
+compara os oito métodos, com o mesmo caminho RRT, a mesma condição inicial e
+os mesmos parâmetros físicos para todos eles. Não há uma nova simulação no
+navegador. A seleção também atualiza o vídeo, o comando de reprodução e os
+links para os dados. Links diretos aceitam, por exemplo,
+`?case=torque&method=mpc_sqp`.
+
+| `--case` | Alteração | Onde olhar |
+|---|---|---|
+| `nominal` | 0,65 rad/s; 1,2 rad/s²; modelo conhecido | Erros pequenos versus custo de cálculo |
+| `fast` | 1,8 rad/s; 5 rad/s² | Picos de erro nas acelerações e frenagens |
+| `torque` | Mesma referência rápida; limites `[3, 29, 20, 2.2, 2, 0.6]` N·m | Saturação, erro e destinos alcançados; compare com `fast` |
+| `payload` | 0,5 kg adicionais na ponta, desconhecidos pelo controlador | Erro persistente e perda de folga geométrica |
+| `disturbance` | Pulso externo `[6, -10, 5, 0, 0, 0]` N·m, de 6,0 a 6,3 s | Pico de erro e recuperação após o pulso |
+
+A pausa nos botões é 0,6 s. O nominal dura 24,18 s; a referência rápida dura
+10,5 s. Os limites dos casos, seus textos e o pulso estão em
+`arm/route_cases.py`. `--speed`, `--acceleration` e `--dwell` podem sobrescrever
+os valores de um caso na CLI; os valores efetivos ficam no JSON da execução.
+
+**Leitura da comparação:**
+
+1. Leia o bloco “Onde olhar” e o resumo calculado a partir das execuções.
+2. Veja conclusão da rota e chegadas aos botões antes de comparar médias.
+3. Marque os métodos para sobrepor **erros**, não apenas posições. Selecione
+   uma junta e amplie o evento ou a região de maior erro. Passe o ponteiro ou
+   toque na curva para ler valores.
+4. Escolha A e B para obter uma comparação numérica; “Sobrepor apenas A e B”
+   isola suas curvas. Diferenças pequenas entre solvers MPC são esperadas:
+   todos resolvem o mesmo QP.
+5. Use o gráfico erro × custo e a tabela ordenável para avaliar o esforço
+   computacional. O orçamento é 20 ms, mas atrasos não são injetados na planta.
+
+O **RMS comum** usa o intervalo de zero até o menor tempo final entre todos
+os métodos do caso. Isso impede comparar médias de trajetórias com durações
+diferentes por causa de uma interrupção. As curvas mostram todo o trecho
+realmente executado; pico, saturação e os cartões da execução usam esse trecho.
+Uma execução interrompida nunca é classificada como sucesso por ter RMS menor.
+
+Saturação é a fração dos passos em que alguma junta atinge pelo menos 99,9%
+do limite. A recuperação exige erro da ponta **menor que 5 mm durante 0,5 s**
+após o pulso. Ausência de recuperação é exibida explicitamente. Esse critério
+não é o mesmo que chegar a um botão (10 mm e 0,05 rad/s).
+
+### Modelo nominal e planta independente
+
+A dinâmica inversa, as linearizações e as previsões do controlador usam o
+braço nominal. A planta recebe a carga adicional ou o torque externo, sem
+informação antecipada para os controladores. Não há ação integral, observador
+de distúrbios ou identificação da carga. O pulso usa `qfrc_applied`, separado
+dos torques dos motores; esses torques externos não contam como saturação.
+
+A carga é uma esfera rígida de raio 3 cm e massa 0,5 kg, centrada no site
+`button_tip`. Sua massa, centro de massa e tensor de inércia são incorporados
+à ferramenta pelo teorema dos eixos paralelos; `mj_setConst` atualiza as
+constantes do modelo. A esfera amarela no vídeo identifica a carga. Seu volume
+não entra no verificador geométrico de elos. Referência da API:
+[alteração de parâmetros e forças externas no MuJoCo](https://mujoco.readthedocs.io/en/3.3.7/programming/simulation.html).
+
+No caso de torque limitado, a referência é mantida mesmo quando seu torque
+nominal excede os limites. O termo afim e os Jacobianos usam a dinâmica sem
+saturação no ponto nominal; as restrições do MPC e o recorte do comando atuam
+separadamente. A planta sempre respeita os limites dos atuadores. Não se reduz
+a velocidade silenciosamente para tornar a referência viável.
+
 ## Planejar e executar
 
 Dentro do contêiner `lunar-rover-jazzy-mujoco`, em `~/mujoco`:
 
 ```sh
-python plan_buttons.py --sequence red yellow green red --mode mpc --solver sqp --horizon 20
+python plan_buttons.py --case nominal --sequence red yellow green red --mode mpc --solver sqp --horizon 20
+python plan_buttons.py --case torque --mode mpc --solver sqp --horizon 20
+python plan_buttons.py --case disturbance --mode infinite
 python plan_buttons.py --sequence green red yellow --mode infinite
 python plan_buttons.py --mode finite --discretization euler
 python plan_buttons.py --mode receding --horizon 20
@@ -42,19 +111,28 @@ O tempo do vídeo representa o tempo simulado, não a espera pelo controlador.
 ## Reproduzir o relatório
 
 ```sh
+# Todos os cinco casos e oito métodos (iLQR móvel pode demorar):
 python path_planning_lab/generate.py
 # Apenas dados, sem renderização:
 python path_planning_lab/generate.py --skip-videos
 # Renderizar novamente vídeos a partir de execuções já salvas:
 python path_planning_lab/generate.py --render-only
 # Repetir apenas um método:
-python path_planning_lab/generate.py --only mpc_sqp
+python path_planning_lab/generate.py --cases torque --only mpc_sqp
+# Apenas remontar a página com os dados existentes:
+python path_planning_lab/generate.py --cases nominal fast torque payload disturbance --assemble-only
 ```
+
+O caso nominal mantém `runs/`, `videos/` e `route.json` na raiz. Os demais
+usam `cases/<caso>/`, com a mesma estrutura. `cases.js` contém o catálogo. Os
+dados são carregados sob demanda, inclusive ao abrir a página por `file://`.
 
 `runs/` contém estados, referências, torques e métricas completos (`.npz` e
 `.json`). `videos/` contém vídeos e imagens finais. `route.json` contém os
 caminhos, parâmetros e métricas do planejador. `data.json` e `data.js` contêm
-as séries dos gráficos, reduzidas a uma amostra a cada três passos. Métricas
+as séries de detalhes, reduzidas a uma amostra a cada três passos (incluindo
+o estado final). As **curvas comparativas mantêm todas as amostras**, para
+não esconder picos curtos. Métricas
 e critérios de chegada são calculados sobre as amostras completas, a 50 Hz.
 O gerador usa a mesma rota e a mesma preparação nominal para todos os métodos.
 
@@ -102,8 +180,9 @@ seus custos/restrições e podem desviar da referência; a checagem é separada.
 
 Uma chegada exige erro da ponta menor que 10 mm e velocidade máxima menor
 que 0,05 rad/s no instante planejado. Isso é independente da convergência do
-solver. As medições de tempo são de uma execução nesta máquina, sem garantia
-de tempo real; atrasos não são injetados na planta.
+solver. As medições de tempo são de uma execução nesta máquina, sem isolamento de
+CPU e com possível concorrência de geração/renderização de outros casos.
+Elas não são um benchmark estatístico e não garantem tempo real; atrasos não são injetados na planta.
 
 ## Testes
 
@@ -113,4 +192,6 @@ python -m unittest discover -s tests -p 'test_*.py'
 
 Os testes cobrem desvios, validade de arestas, reprodutibilidade, falha explícita
 do RRT, limites de velocidade/aceleração, dinâmica inversa, condensação afim,
-referência móvel do iLQR e uma rota contínua sem reiniciar o estado.
+referência móvel do iLQR, uma rota contínua sem reiniciar o estado, isolamento
+do modelo nominal, massa/inércia da carga, duração e remoção do pulso e
+linearização afim em torno de torque nominal inviável.

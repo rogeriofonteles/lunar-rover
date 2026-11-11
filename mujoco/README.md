@@ -400,3 +400,20 @@ Implementation references: [MuJoCo Python bindings](https://mujoco.readthedocs.i
 [MuJoCo functions](https://mujoco.readthedocs.io/en/3.3.7/APIreference/APIfunctions.html),
 [SciPy discretization](https://docs.scipy.org/doc/scipy/reference/generated/scipy.signal.cont2discrete.html),
 and [SciPy SLSQP](https://docs.scipy.org/doc/scipy/reference/optimize.minimize-slsqp.html).
+
+### Casos de comparação de acompanhamento
+
+O laboratório agora permite escolher `nominal`, `fast`, `torque`, `payload`
+ou `disturbance`, tanto na página quanto em `plan_buttons.py`:
+
+```sh
+python plan_buttons.py --case torque --mode mpc --solver sqp --horizon 20
+python plan_buttons.py --case payload --mode finite
+python plan_buttons.py --case disturbance --mode ilqr_receding --headless
+```
+
+Abra [o relatório em PT-BR](path_planning_lab/index.html). A comparação inclui
+curvas de erro sobrepostas, janela da perturbação, saturação, erro × custo,
+comparação A/B e textos que explicam onde olhar em cada caso. Os resultados
+incluem interrupções e falhas de chegada; o erro RMS da tabela usa um intervalo
+comum a todos os métodos. Consulte [os parâmetros e a reprodução dos casos](path_planning_lab/README.md).

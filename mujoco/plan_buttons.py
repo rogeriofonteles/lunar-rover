@@ -12,6 +12,7 @@ from arm.buttons import BUTTON_NAMES
 from arm.mpc import MPC_SOLVERS
 from arm.simulate import MODES
 from arm.route_simulation import prepare, run_route
+from arm.route_cases import CASES
 
 
 def main():
@@ -22,9 +23,10 @@ def main():
     parser.add_argument('--horizon',type=int,default=20)
     parser.add_argument('--discretization',choices=['euler','zoh'],default='zoh')
     parser.add_argument('--seed',type=int,default=6)
-    parser.add_argument('--speed',type=float,default=.65,help='Velocidade máxima da referência, rad/s')
-    parser.add_argument('--acceleration',type=float,default=1.2,help='Aceleração máxima, rad/s²')
-    parser.add_argument('--dwell',type=float,default=.6,help='Pausa em cada botão, segundos')
+    parser.add_argument('--case',choices=list(CASES),default='nominal',help='Caso do experimento')
+    parser.add_argument('--speed',type=float,help='Sobrescreve a velocidade do caso, rad/s')
+    parser.add_argument('--acceleration',type=float,help='Sobrescreve a aceleração do caso, rad/s²')
+    parser.add_argument('--dwell',type=float,help='Sobrescreve a pausa do caso, segundos')
     parser.add_argument('--ilqr-max-iterations',type=int,default=5)
     parser.add_argument('--headless',action='store_true')
     parser.add_argument('--wait',action='store_true')
@@ -33,7 +35,7 @@ def main():
     args=parser.parse_args()
     try:
         config,arm,route,nominal=prepare(args.sequence,args.seed,args.speed,args.acceleration,args.dwell,
-            mode=args.mode,solver=args.solver,horizon=args.horizon,discretization=args.discretization,
+            case=args.case,mode=args.mode,solver=args.solver,horizon=args.horizon,discretization=args.discretization,
             ilqr_max_iterations=args.ilqr_max_iterations)
         arrays,summary=run_route(config,arm,route,nominal,args.headless,args.wait,args.output)
         if args.video:

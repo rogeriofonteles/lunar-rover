@@ -1,0 +1,249 @@
+{
+  "experiment": {
+    "key": "payload",
+    "dwell": 0.6,
+    "label": "04 · Carga desconhecida",
+    "speed": 0.65,
+    "acceleration": 1.2,
+    "payload_kg": 0.5,
+    "description": "Massa adicional de 0,5 kg na ponta, presente desde o início e desconhecida pelos controladores.",
+    "focus": "Procure erro persistente mesmo nas pausas. Todos continuam usando o braço sem carga em suas previsões; nenhum método ganha um estimador ou ação integral neste teste."
+  },
+  "sequence": [
+    "red",
+    "yellow",
+    "green",
+    "red"
+  ],
+  "seed": 6,
+  "speed_rad_s": 0.65,
+  "acceleration_rad_s2": 1.2,
+  "dwell_s": 0.6,
+  "timestep": 0.02,
+  "planning": [
+    {
+      "iterations": 35,
+      "nodes": 32,
+      "source": "red",
+      "destination": "yellow",
+      "direct_valid": false,
+      "raw_waypoints": 16,
+      "waypoints": 4,
+      "checks": 1358,
+      "seconds": 0.7494205550174229,
+      "length_rad": 2.74040956293499
+    },
+    {
+      "iterations": 1,
+      "nodes": 12,
+      "source": "yellow",
+      "destination": "green",
+      "direct_valid": true,
+      "raw_waypoints": 11,
+      "waypoints": 2,
+      "checks": 371,
+      "seconds": 0.20062165596755221,
+      "length_rad": 2.180221687988854
+    },
+    {
+      "iterations": 73,
+      "nodes": 59,
+      "source": "green",
+      "destination": "red",
+      "direct_valid": false,
+      "raw_waypoints": 30,
+      "waypoints": 4,
+      "checks": 5425,
+      "seconds": 2.8450549750123173,
+      "length_rad": 5.560806028772338
+    }
+  ],
+  "paths": [
+    [
+      [
+        -0.7328151017865066,
+        0.20957138743636217,
+        1.197215324552472,
+        0.0,
+        1.093213288011166,
+        0.0
+      ],
+      [
+        -0.7222622312357238,
+        -0.06324470927318625,
+        0.8031803677037402,
+        0.35364378921240064,
+        0.9681190455735135,
+        0.36278666166478213
+      ],
+      [
+        0.2859193304190226,
+        -0.12544612827800128,
+        0.5221822393718157,
+        0.4176857698932435,
+        0.617175239652674,
+        -0.18924505101512806
+      ],
+      [
+        0.7443253848069942,
+        -0.1817624507713272,
+        0.9273021599718974,
+        0.0,
+        0.8252566175943263,
+        0.0
+      ]
+    ],
+    [
+      [
+        0.7443253848069942,
+        -0.1817624507713272,
+        0.9273021599718974,
+        0.0,
+        0.8252566175943263,
+        0.0
+      ],
+      [
+        2.408777551803287,
+        -0.106381603107909,
+        1.8832017381698556,
+        0.0,
+        -0.20602380826705002,
+        0.0
+      ]
+    ],
+    [
+      [
+        2.408777551803287,
+        -0.106381603107909,
+        1.8832017381698556,
+        0.0,
+        -0.20602380826705002,
+        0.0
+      ],
+      [
+        2.0041732166899213,
+        -0.13771582531217308,
+        1.4584747818702821,
+        0.1314404089861015,
+        0.3154203535871247,
+        0.44086235262019824
+      ],
+      [
+        -0.46524662940507533,
+        -0.04241377672070032,
+        0.15624808532205625,
+        -0.3670760050934413,
+        0.9017501350208347,
+        -0.8750311356899265
+      ],
+      [
+        -0.7328151017865066,
+        0.20957138743636217,
+        1.197215324552472,
+        0.0,
+        1.093213288011166,
+        0.0
+      ]
+    ]
+  ],
+  "arrivals": [
+    {
+      "button": "red",
+      "index": 0
+    },
+    {
+      "button": "yellow",
+      "index": 290
+    },
+    {
+      "button": "green",
+      "index": 561
+    },
+    {
+      "button": "red",
+      "index": 1179
+    }
+  ],
+  "reference_min_clearance_m": 0.030081614532948026,
+  "scene": {
+    "joint_lower": [
+      -3.14159,
+      -1.4,
+      -1.5,
+      -1.8,
+      -1.5,
+      -3.14159
+    ],
+    "joint_upper": [
+      3.14159,
+      1.8,
+      2.6,
+      1.8,
+      2.5,
+      3.14159
+    ],
+    "link_radii": [
+      0.08,
+      0.07,
+      0.055,
+      0.05,
+      0.05
+    ],
+    "margin_m": 0.025,
+    "edge_resolution_rad": 0.025,
+    "spheres": [
+      {
+        "name": "planning_obstacle",
+        "center": [
+          0.32,
+          0.05,
+          1.72
+        ],
+        "radius": 0.12
+      }
+    ],
+    "boxes": [
+      {
+        "name": "pedestal",
+        "center": [
+          0,
+          0,
+          0.39
+        ],
+        "half_size": [
+          0.61,
+          0.49,
+          0.4
+        ]
+      },
+      {
+        "name": "bancada",
+        "center": [
+          -1.49,
+          0.865,
+          0.84
+        ],
+        "half_size": [
+          0.49,
+          0.43,
+          0.06
+        ]
+      },
+      {
+        "name": "armario",
+        "center": [
+          1.55,
+          1.22,
+          0.91
+        ],
+        "half_size": [
+          0.4,
+          0.34,
+          0.76
+        ]
+      }
+    ]
+  },
+  "nominal_preparation_seconds": 2.4829381649615243,
+  "generated_utc": "2026-11-11T19:48:09.260297+00:00"
+}

@@ -33,6 +33,13 @@ def render_route_video(arm,arrays,summary,path,width=1920,height=1080,fps=30):
                     data.qvel[:]=0
                     mujoco.mj_forward(arm.model,data)
                     renderer.update_scene(data,camera='buttons')
+                    experiment=summary.get('experiment',{})
+                    if experiment.get('payload_kg'):
+                        scene=renderer.scene
+                        mujoco.mjv_initGeom(scene.geoms[scene.ngeom],mujoco.mjtGeom.mjGEOM_SPHERE,
+                            np.array([.03,0,0]),data.site('button_tip').xpos,np.eye(3).ravel(),
+                            np.array([1.,.66,.12,1.],dtype=np.float32))
+                        scene.ngeom+=1
                     # Dashed reference trail is visual only; arm poses come from MuJoCo integration.
                     for point in arrays['planned_tip'][::8]:
                         scene=renderer.scene
@@ -43,10 +50,19 @@ def render_route_video(arm,arrays,summary,path,width=1920,height=1080,fps=30):
                         scene.ngeom+=1
                     image=Image.fromarray(renderer.render());draw=ImageDraw.Draw(image)
                     x,y=40,30
-                    draw.rounded_rectangle((20,15,width*.62,155),radius=12,fill='#132a26')
+                    draw.rounded_rectangle((20,15,width*.7,200 if experiment else 155),radius=12,fill='#132a26')
                     draw.text((x,y),'RRT-CONNECT  /  '+summary['label'],font=font,fill='#f5f4ed')
                     draw.text((x,y+43),' → '.join(COLORS[c] for c in summary['sequence']),font=small,fill='#e6b998')
                     draw.text((x,y+78),f"MuJoCo · referência em azul · tempo simulado {t:.2f} s".replace('.',','),font=small,fill='#d5e3de')
+                    if experiment:
+                        draw.text((x,y+117),experiment['label'],font=small,fill='#f5f4ed')
+                    pulse=experiment.get('pulse')
+                    if pulse and pulse['start_s']<=t<pulse['start_s']+pulse['duration_s']:
+                        draw.rounded_rectangle((20,height-100,width-20,height-25),radius=12,fill='#8e5019')
+                        draw.text((40,height-83),'PERTURBAÇÃO EXTERNA · torque nas juntas 1, 2 e 3',font=font,fill='white')
+                    if summary.get('termination') and t>=times[-1]-1e-6:
+                        draw.rounded_rectangle((20,height-100,width-20,height-25),radius=12,fill='#8d3027')
+                        draw.text((40,height-83),summary['termination'],font=font,fill='white')
                     encoder.stdin.write(image.tobytes())
                     if index==0:
                         image.save(path.with_name(path.stem+'-start.png'))

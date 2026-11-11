@@ -36,12 +36,19 @@ def prepare_nominal(arm, route, config):
         arm.data.qacc[:]=route.accelerations[i]
         mujoco.mj_inverse(arm.model,arm.data)
         u=arm.data.qfrc_inverse.copy()
-        if np.any(np.abs(u)>arm.limit):
+        if np.any(np.abs(u)>arm.limit) and not config.get('experiment',{}).get('allow_infeasible',False):
             raise ValueError("Referência exige torque inviável; reduza velocidade/aceleração")
         Ac,Bc=arm.linearize(x,u)
         A,B=discretize(Ac,Bc,arm.dt,config["discretization"])
         K,P=infinite_horizon_lqr(A,B,Q,R)
-        ds.append(arm.step(x,u)-route.states[min(i+1,len(route.states)-1)])
+        # Affine model is centered at inverse dynamics even when that torque
+        # is infeasible. Constraints act on du; do not linearize a clipped u.
+        limited=arm.model.actuator_ctrllimited.copy()
+        try:
+            arm.model.actuator_ctrllimited[:]=False
+            ds.append(arm.step(x,u)-route.states[min(i+1,len(route.states)-1)])
+        finally:
+            arm.model.actuator_ctrllimited[:]=limited
         us.append(u);As.append(A);Bs.append(B);Ks.append(K);Ps.append(P)
     return Nominal(route.states,np.asarray(us),np.asarray(As),np.asarray(Bs),
                    np.asarray(ds),np.asarray(Ks),np.asarray(Ps),Q,R,time.perf_counter()-start)

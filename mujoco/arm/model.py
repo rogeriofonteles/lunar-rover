@@ -59,8 +59,10 @@ class ArmModel:
         mujoco.mj_forward(self.model, self.data)
         return np.concatenate((self.data.qvel, self.data.qacc))
 
-    def step(self, x, u):
+    def step(self, x, u, external_torque=None):
         self._set(x, u)
+        if external_torque is not None:
+            self.data.qfrc_applied[:] = vector(external_torque, 6, "external_torque")
         for _ in range(self.substeps):
             mujoco.mj_step(self.model, self.data)
         result = np.concatenate((self.data.qpos, self.data.qvel))

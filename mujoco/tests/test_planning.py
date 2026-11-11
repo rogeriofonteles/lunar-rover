@@ -2,6 +2,7 @@
 from contextlib import redirect_stdout
 import io
 import unittest
+from dataclasses import replace
 
 import mujoco
 import numpy as np
@@ -12,6 +13,7 @@ from arm.planning import CollisionWorld,plan_route,rrt_connect,segment_distance
 from arm.simulate import load_config
 from arm.tracking import prepare_nominal,condense,TrackingProblem,TrajectoryController
 from arm.route_simulation import run_route
+from arm.route_cases import case_settings, external_torque, make_plant
 
 
 class PlanningTests(unittest.TestCase):
@@ -89,6 +91,66 @@ class PlanningTests(unittest.TestCase):
         for visit in self.route.arrivals[1:]:
             k=visit['index']
             assert_allclose(arrays['states'][k],self.arm.step(arrays['states'][k-1],arrays['controls'][k-1]),atol=1e-12)
+
+    def test_payload_changes_only_plant_mass_gravity_and_inertia(self):
+        config=dict(self.config,experiment=case_settings('payload'))
+        before=self.arm.model.body_mass.copy()
+        plant=make_plant(config)
+        assert_allclose(self.arm.model.body_mass,before,atol=0,rtol=0)
+        self.assertAlmostEqual(plant.model.body_mass.sum()-before.sum(),.5)
+        body=plant.model.body('tool_roll').id
+        self.assertTrue(np.all(plant.model.body_inertia[body]>0))
+        self.assertGreater(plant.model.body_ipos[body,2],self.arm.model.body_ipos[body,2])
+        x=self.route.states[0];u=self.nominal.controls[0]
+        self.assertGreater(np.linalg.norm(plant.derivative(x,u)-self.arm.derivative(x,u)),.1)
+        # Independent static check: extra gravity torque equals -J_tip^T m g.
+        extra=plant.equilibrium_control(x)-self.arm.equilibrium_control(x)
+        jacp=np.zeros((3,6));jacr=np.zeros((3,6))
+        mujoco.mj_jacSite(self.arm.model,self.arm.data,jacp,jacr,self.arm.model.site('button_tip').id)
+        assert_allclose(extra,-jacp.T@(.5*self.arm.model.opt.gravity),atol=1e-10)
+        same=make_plant(self.config)
+        assert_allclose(same.step(x,u),self.arm.step(x,u),atol=1e-12)
+
+    def test_external_pulse_duration_and_reset(self):
+        experiment=case_settings('disturbance')
+        forces=np.array([external_torque(experiment,k*.02) for k in range(400)])
+        self.assertEqual(np.count_nonzero(np.linalg.norm(forces,axis=1)),15)
+        assert_allclose(forces[300],[6,-10,5,0,0,0])
+        assert_allclose(forces[315],0)
+        x=self.route.states[0];u=self.nominal.controls[0]
+        baseline=self.arm.step(x,u)
+        pushed=self.arm.step(x,u,forces[300])
+        self.assertGreater(np.linalg.norm(pushed-baseline),.001)
+        assert_allclose(self.arm.step(x,u),baseline,atol=1e-12)
+
+    def test_route_applies_disturbance_to_plant_without_resetting_state(self):
+        experiment=case_settings('disturbance')
+        experiment['pulse'].update(start_s=.02,duration_s=.04)
+        config=dict(self.config,mode='infinite',experiment=experiment)
+        route=replace(self.route,states=self.route.states[:5],accelerations=self.route.accelerations[:5],
+                      arrivals=self.route.arrivals[:1])
+        with redirect_stdout(io.StringIO()):
+            arrays,summary=run_route(config,self.arm,route,self.nominal)
+        self.assertEqual(summary['case'],'disturbance')
+        self.assertTrue(summary['completed'])
+        self.assertEqual(np.count_nonzero(np.linalg.norm(arrays['external_torques'],axis=1)),2)
+        plant=make_plant(config)
+        for k in range(4):
+            assert_allclose(arrays['states'][k+1],plant.step(arrays['states'][k],arrays['controls'][k],
+                            arrays['external_torques'][k]),atol=1e-12)
+
+    def test_infeasible_nominal_uses_unclipped_affine_dynamics(self):
+        config=dict(self.config,torque_limit=[.1]*6,experiment=dict(allow_infeasible=True))
+        arm=ArmModel(torque_limit=config['torque_limit'])
+        route=replace(self.route,states=self.route.states[:3],accelerations=self.route.accelerations[:3])
+        nominal=prepare_nominal(arm,route,config)
+        self.assertTrue(np.any(np.abs(nominal.controls)>arm.limit))
+        self.assertTrue(arm.model.actuator_ctrllimited.all())
+        limited=arm.step(route.states[0],nominal.controls[0])-route.states[1]
+        self.assertGreater(np.linalg.norm(nominal.defect[0]-limited),.01)
+        arm.model.actuator_ctrllimited[:]=False
+        expected=arm.step(route.states[0],nominal.controls[0])-route.states[1]
+        assert_allclose(nominal.defect[0],expected,atol=1e-12)
 
 
 if __name__=='__main__':

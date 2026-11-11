@@ -1,0 +1,2871 @@
+{
+  "key": "finite",
+  "label": "LQR finito",
+  "case": "fast",
+  "experiment": {
+    "key": "fast",
+    "dwell": 0.6,
+    "label": "02 · Movimento rápido",
+    "speed": 1.8,
+    "acceleration": 5.0,
+    "description": "Mesmo caminho geométrico, com limites de velocidade e aceleração maiores.",
+    "focus": "Olhe os picos de erro nas acelerações e frenagens. Compare o erro articular, não apenas as posições quase sobrepostas."
+  },
+  "mode": "finite",
+  "solver": null,
+  "horizon": 20,
+  "discretization": "zoh",
+  "sequence": [
+    "red",
+    "yellow",
+    "green",
+    "red"
+  ],
+  "completed": true,
+  "termination": null,
+  "steps": 525,
+  "simulated_seconds": 10.5,
+  "wall_seconds": 0.5482194179785438,
+  "controller_setup_seconds": 0.015203615999780595,
+  "nominal_preparation_seconds": 0.9653315769974142,
+  "planning": [
+    {
+      "iterations": 35,
+      "nodes": 32,
+      "source": "red",
+      "destination": "yellow",
+      "direct_valid": false,
+      "raw_waypoints": 16,
+      "waypoints": 4,
+      "checks": 1358,
+      "seconds": 0.6392210209742188,
+      "length_rad": 2.74040956293499
+    },
+    {
+      "iterations": 1,
+      "nodes": 12,
+      "source": "yellow",
+      "destination": "green",
+      "direct_valid": true,
+      "raw_waypoints": 11,
+      "waypoints": 2,
+      "checks": 371,
+      "seconds": 0.17043988895602524,
+      "length_rad": 2.180221687988854
+    },
+    {
+      "iterations": 73,
+      "nodes": 59,
+      "source": "green",
+      "destination": "red",
+      "direct_valid": false,
+      "raw_waypoints": 30,
+      "waypoints": 4,
+      "checks": 5425,
+      "seconds": 2.597336942970287,
+      "length_rad": 5.560806028772338
+    }
+  ],
+  "initial_state": [
+    -0.7328151017865066,
+    0.20957138743636217,
+    1.197215324552472,
+    0.0,
+    1.093213288011166,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+  ],
+  "visits": [
+    {
+      "button": "red",
+      "index": 0,
+      "time_s": 0.0,
+      "tip_error_m": 1.2412670766236366e-16,
+      "speed_rad_s": 0.0,
+      "reached": true
+    },
+    {
+      "button": "yellow",
+      "index": 125,
+      "time_s": 2.5,
+      "tip_error_m": 0.0007304017508249734,
+      "speed_rad_s": 0.013042739776091675,
+      "reached": true
+    },
+    {
+      "button": "green",
+      "index": 242,
+      "time_s": 4.84,
+      "tip_error_m": 0.0005962845692762073,
+      "speed_rad_s": 0.006054253661212884,
+      "reached": true
+    },
+    {
+      "button": "red",
+      "index": 495,
+      "time_s": 9.9,
+      "tip_error_m": 0.001289684437247603,
+      "speed_rad_s": 0.009948521484316776,
+      "reached": true
+    }
+  ],
+  "rms_joint_error_rad": 0.0010694183466283247,
+  "max_joint_error_rad": 0.008878484879821083,
+  "rms_tip_error_m": 0.002642981291250307,
+  "max_tip_error_m": 0.009815964830776607,
+  "saturated_step_percent": 0.0,
+  "recovery_seconds": null,
+  "recovery_threshold_mm": 5.0,
+  "recovery_hold_seconds": 0.5,
+  "nominal_peak_utilization": 0.48085557330984086,
+  "min_clearance_m": 0.029132075298137106,
+  "peak_torque_nm": [
+    3.1149837192944774,
+    38.5284366614316,
+    24.91520430145895,
+    2.608777635628842,
+    1.8350118026186584,
+    0.8597947605824494
+  ],
+  "command_median_ms": 0.00999000621959567,
+  "command_p95_ms": 0.014806014951318499,
+  "deadline_misses": 0,
+  "nonconverged_solves": 0,
+  "ilqr_plan": null,
+  "solver_log": [
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    },
+    {
+      "converged": true,
+      "iterations": 0,
+      "residual": 0.0
+    }
+  ],
+  "config": {
+    "mode": "finite",
+    "button": null,
+    "discretization": "zoh",
+    "solver": "sqp",
+    "timestep": 0.02,
+    "physics_timestep": 0.002,
+    "horizon": 20,
+    "steps": 200,
+    "initial_state": [
+      1.597,
+      -0.895,
+      0.973,
+      1.528,
+      1.285,
+      -1.778,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "target_state": [
+      0,
+      0.4,
+      -0.7,
+      0,
+      0.3,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "torque_limit": [
+      80,
+      80,
+      60,
+      25,
+      25,
+      15
+    ],
+    "Q": [
+      50,
+      50,
+      50,
+      50,
+      50,
+      50,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2
+    ],
+    "R": [
+      0.05,
+      0.05,
+      0.05,
+      0.05,
+      0.05,
+      0.05
+    ],
+    "terminal_cost": null,
+    "ilqr_max_iterations": 5,
+    "ilqr_tolerance": 1e-06,
+    "ilqr_regularization": 1e-05,
+    "ilqr_state_damping": 1.0,
+    "ilqr_control_damping": 1.0,
+    "mpc_max_iterations": 1000,
+    "mpc_tolerance": 1e-06,
+    "headless": false,
+    "maximize": true,
+    "viewer_ui": false,
+    "wait": true,
+    "realtime": true,
+    "output": null,
+    "snapshot": null,
+    "snapshot_width": 2560,
+    "snapshot_height": 1920,
+    "experiment": {
+      "key": "fast",
+      "dwell": 0.6,
+      "label": "02 · Movimento rápido",
+      "speed": 1.8,
+      "acceleration": 5.0,
+      "description": "Mesmo caminho geométrico, com limites de velocidade e aceleração maiores.",
+      "focus": "Olhe os picos de erro nas acelerações e frenagens. Compare o erro articular, não apenas as posições quase sobrepostas."
+    }
+  },
+  "video": {
+    "file": "finite.mp4",
+    "width": 1920,
+    "height": 1080,
+    "fps": 30,
+    "frames": 405,
+    "initial_hold_seconds": 1,
+    "final_hold_seconds": 2,
+    "duration_seconds": 13.5
+  }
+}

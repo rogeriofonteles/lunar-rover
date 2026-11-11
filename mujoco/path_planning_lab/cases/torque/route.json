@@ -1,0 +1,257 @@
+{
+  "experiment": {
+    "key": "torque",
+    "dwell": 0.6,
+    "label": "03 · Torque limitado",
+    "speed": 1.8,
+    "acceleration": 5.0,
+    "torque_limit": [
+      3.0,
+      29.0,
+      20.0,
+      2.2,
+      2.0,
+      0.6
+    ],
+    "allow_infeasible": true,
+    "description": "A referência rápida é mantida, mas os motores têm limites mais restritos. O torque nominal pode exceder a capacidade disponível.",
+    "focus": "Compare com Movimento rápido para isolar os limites. Observe a utilização de torque, o tempo em saturação e o erro. MPC antecipa limites; LQR satura o comando depois de calculá-lo. Isso não garante vantagem em toda rota."
+  },
+  "sequence": [
+    "red",
+    "yellow",
+    "green",
+    "red"
+  ],
+  "seed": 6,
+  "speed_rad_s": 1.8,
+  "acceleration_rad_s2": 5.0,
+  "dwell_s": 0.6,
+  "timestep": 0.02,
+  "planning": [
+    {
+      "iterations": 35,
+      "nodes": 32,
+      "source": "red",
+      "destination": "yellow",
+      "direct_valid": false,
+      "raw_waypoints": 16,
+      "waypoints": 4,
+      "checks": 1358,
+      "seconds": 0.7216552619938739,
+      "length_rad": 2.74040956293499
+    },
+    {
+      "iterations": 1,
+      "nodes": 12,
+      "source": "yellow",
+      "destination": "green",
+      "direct_valid": true,
+      "raw_waypoints": 11,
+      "waypoints": 2,
+      "checks": 371,
+      "seconds": 0.2018068180186674,
+      "length_rad": 2.180221687988854
+    },
+    {
+      "iterations": 73,
+      "nodes": 59,
+      "source": "green",
+      "destination": "red",
+      "direct_valid": false,
+      "raw_waypoints": 30,
+      "waypoints": 4,
+      "checks": 5425,
+      "seconds": 2.9906365830102004,
+      "length_rad": 5.560806028772338
+    }
+  ],
+  "paths": [
+    [
+      [
+        -0.7328151017865066,
+        0.20957138743636217,
+        1.197215324552472,
+        0.0,
+        1.093213288011166,
+        0.0
+      ],
+      [
+        -0.7222622312357238,
+        -0.06324470927318625,
+        0.8031803677037402,
+        0.35364378921240064,
+        0.9681190455735135,
+        0.36278666166478213
+      ],
+      [
+        0.2859193304190226,
+        -0.12544612827800128,
+        0.5221822393718157,
+        0.4176857698932435,
+        0.617175239652674,
+        -0.18924505101512806
+      ],
+      [
+        0.7443253848069942,
+        -0.1817624507713272,
+        0.9273021599718974,
+        0.0,
+        0.8252566175943263,
+        0.0
+      ]
+    ],
+    [
+      [
+        0.7443253848069942,
+        -0.1817624507713272,
+        0.9273021599718974,
+        0.0,
+        0.8252566175943263,
+        0.0
+      ],
+      [
+        2.408777551803287,
+        -0.106381603107909,
+        1.8832017381698556,
+        0.0,
+        -0.20602380826705002,
+        0.0
+      ]
+    ],
+    [
+      [
+        2.408777551803287,
+        -0.106381603107909,
+        1.8832017381698556,
+        0.0,
+        -0.20602380826705002,
+        0.0
+      ],
+      [
+        2.0041732166899213,
+        -0.13771582531217308,
+        1.4584747818702821,
+        0.1314404089861015,
+        0.3154203535871247,
+        0.44086235262019824
+      ],
+      [
+        -0.46524662940507533,
+        -0.04241377672070032,
+        0.15624808532205625,
+        -0.3670760050934413,
+        0.9017501350208347,
+        -0.8750311356899265
+      ],
+      [
+        -0.7328151017865066,
+        0.20957138743636217,
+        1.197215324552472,
+        0.0,
+        1.093213288011166,
+        0.0
+      ]
+    ]
+  ],
+  "arrivals": [
+    {
+      "button": "red",
+      "index": 0
+    },
+    {
+      "button": "yellow",
+      "index": 125
+    },
+    {
+      "button": "green",
+      "index": 242
+    },
+    {
+      "button": "red",
+      "index": 495
+    }
+  ],
+  "reference_min_clearance_m": 0.030141477781965936,
+  "scene": {
+    "joint_lower": [
+      -3.14159,
+      -1.4,
+      -1.5,
+      -1.8,
+      -1.5,
+      -3.14159
+    ],
+    "joint_upper": [
+      3.14159,
+      1.8,
+      2.6,
+      1.8,
+      2.5,
+      3.14159
+    ],
+    "link_radii": [
+      0.08,
+      0.07,
+      0.055,
+      0.05,
+      0.05
+    ],
+    "margin_m": 0.025,
+    "edge_resolution_rad": 0.025,
+    "spheres": [
+      {
+        "name": "planning_obstacle",
+        "center": [
+          0.32,
+          0.05,
+          1.72
+        ],
+        "radius": 0.12
+      }
+    ],
+    "boxes": [
+      {
+        "name": "pedestal",
+        "center": [
+          0,
+          0,
+          0.39
+        ],
+        "half_size": [
+          0.61,
+          0.49,
+          0.4
+        ]
+      },
+      {
+        "name": "bancada",
+        "center": [
+          -1.49,
+          0.865,
+          0.84
+        ],
+        "half_size": [
+          0.49,
+          0.43,
+          0.06
+        ]
+      },
+      {
+        "name": "armario",
+        "center": [
+          1.55,
+          1.22,
+          0.91
+        ],
+        "half_size": [
+          0.4,
+          0.34,
+          0.76
+        ]
+      }
+    ]
+  },
+  "nominal_preparation_seconds": 1.15265865100082,
+  "generated_utc": "2026-11-11T19:49:49.554035+00:00"
+}
