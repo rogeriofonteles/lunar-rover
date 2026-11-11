@@ -13,6 +13,7 @@ Abra `http://localhost:8765`. O parâmetro `?cenario=far` abre um cenário espec
 ## O que explorar
 
 - Onze desafios × três opções de torque (original, ±3 N·m e sem clipping), com seis segundos de física em cada execução. São sete métodos registrados por configuração: 231 trajetórias.
+- Explicações, conceitos, roteiro de investigação e parâmetros acompanham a comparação, o desafio e o torque selecionados. Os resultados narrados vêm dos dados da execução; a explicação do custo acompanha o solver escolhido.
 - Visão principal LQR infinito × MPC não linear; opção de mostrar os quatro controladores; comparação separada de solvers MPC.
 - Replay sincronizado com pausa, velocidade, scrubbing, alvo e rastros.
 - Plano nominal iLQR e previsões MPC (guardadas a cada dez amostras).

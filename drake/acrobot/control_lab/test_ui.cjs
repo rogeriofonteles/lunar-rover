@@ -35,15 +35,37 @@ for(let i=0;i<11;i++){
   for(const family of ['focus','all','solvers']){
    el('comparison-mode').value=family;
    el('scenario-list').children[i].click();assert.equal(el('scenario-title').textContent,challenges[i].config.title);
+   el('comparison-mode').onchange();el('torque-mode').onchange();
    const count=family==='focus'?2:family==='all'?4:(D.solver_comparison.show_slsqp?4:3);
    assert.equal((el('metrics').innerHTML.match(/<tr>/g)||[]).length,count);
    assert(!/NaN|undefined/.test(el('metrics').innerHTML+el('findings').innerHTML+el('torque-impact').innerHTML));
+   const explanations=['scenario-note','concept-grid','exploration-notes','method-model','method-reading'].map(id=>el(id).innerHTML).join(' ');
+   assert(!/NaN|undefined/.test(explanations));
+   assert.equal((el('concept-grid').innerHTML.match(/<article>/g)||[]).length,count);
+   assert.equal(el('solver-benchmark').hidden,family!=='solvers');
+   assert.equal(el('nominal-option').hidden,family!=='all');
+   assert.equal(el('parameters').innerHTML.includes('LQR finito · Qf'),family==='all');
+   if(family==='focus')assert(!/LQR finito|MPC · SQP|plano único/.test(el('concept-grid').innerHTML));
+   if(family==='solvers')assert(el('concept-grid').innerHTML.includes('Hessiana exata')||torque==='unclipped');
+   if(torque==='unclipped'){
+    assert(el('scenario-note').innerHTML.includes('nenhum método exibido limita o torque'));
+    assert.equal(el('torque-caption').textContent,'sem limites de torque');
+   }
+   if(['terminal','late'].includes(challenges[i].config.id)&&family!=='all')assert(el('scenario-note').innerHTML.includes('não participa desta visão'));
+   const chosen=D.scenarios.find(s=>s.config.challenge_id===challenges[i].config.id&&s.config.torque_mode===torque);
+   const cards=el('concept-grid').innerHTML.match(/<article>[\s\S]*?<\/article>/g);
+   const shown=family==='focus'?['infinite','mpc']:family==='all'?['finite','infinite','ilqr','mpc']:['mpc_lqr','mpc_sqp',...(D.solver_comparison.show_slsqp?['mpc_slsqp']:[]),'mpc'];
+   shown.forEach((mode,j)=>{
+    const settling=chosen.runs[mode].metrics.settling_s;
+    assert(cards[j].includes(settling===null?'não estabilizou nos 6 s':`estabilizou a partir de ${settling.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})} s`));
+   });
    if(torque==='unclipped')assert(el('parameters').innerHTML.includes('Sem clipping'));
    if(torque==='clipped')assert(el('parameters').innerHTML.includes('±3 N·m'));
    el('timeline').oninput({target:{value:'3.5'}});assert(el('clock').textContent.startsWith('3,50'));
    el('solver-select').value='mpc';el('solver-select').onchange();el('solve-index').value='119';el('solve-index').oninput();assert(el('solve-time').textContent.includes('5,95'));
    if(family==='all'){el('solver-select').value='ilqr';el('solver-select').onchange();assert(el('solve-index').disabled);}
-   if(family==='solvers'){el('solver-select').value='mpc_sqp';el('solver-select').onchange();assert(el('solver-detail').innerHTML.includes('KKT'));}
+   if(family==='solvers'){el('solver-select').value='mpc_sqp';el('solver-select').onchange();assert(el('solver-detail').innerHTML.includes('KKT'));assert(el('cost-caption').textContent.includes(torque==='unclipped'?'analítica':'QP linear limitado'));
+    el('solver-select').value='mpc_lqr';el('solver-select').onchange();assert(el('optimization-caption').textContent.includes('sem iterações'));}
    el('csv').click();assert(blob.size>1000);
   }
  }
@@ -56,4 +78,4 @@ el('restart').click();el('play').click();clock=1000;raf(clock);assert(el('clock'
 el('speed').value='2';clock=2000;raf(clock);assert(el('clock').textContent.startsWith('3,00'));
 clock=4000;raf(clock);assert(el('clock').textContent.startsWith('6,00'));assert.equal(el('play').textContent,'▶');el('restart').click();assert(el('clock').textContent.startsWith('0,00'));
 for(const id of ['trail','nominal','predictions']){el(id).checked=!el(id).checked;el(id).onchange();}
-console.log('PASS: 11 challenges × 3 torque options × 3 views; replay, units, solvers and CSV (DOM double; not browser QA).');
+console.log('PASS: 11 challenges × 3 torque options × 3 views; contextual explanations, measured outcomes, replay, units, solvers and CSV (DOM double; not browser QA).');
