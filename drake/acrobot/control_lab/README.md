@@ -12,7 +12,8 @@ Abra `http://localhost:8765`. O parâmetro `?cenario=far` abre um cenário espec
 
 ## O que explorar
 
-- Onze cenários, quatro controladores por cenário, seis segundos de física em cada execução.
+- Onze desafios × três opções de torque (original, ±3 N·m e sem clipping), com seis segundos de física em cada execução. São sete métodos registrados por configuração: 231 trajetórias.
+- Visão principal LQR infinito × MPC não linear; opção de mostrar os quatro controladores; comparação separada de solvers MPC.
 - Replay sincronizado com pausa, velocidade, scrubbing, alvo e rastros.
 - Plano nominal iLQR e previsões MPC (guardadas a cada dez amostras).
 - Ângulos das juntas, orientações absolutas dos links, velocidades, torque,
@@ -29,10 +30,10 @@ não roda Drake em JavaScript nem inventa resultados para combinações não tes
 A partir da raiz do projeto, com o contêiner iniciado:
 
 ```sh
-docker exec -e OPENBLAS_NUM_THREADS=1 -e OMP_NUM_THREADS=1 lunar-rover-jazzy-drake fish -c 'cd ~/drake; python acrobot/control_lab/generate.py'
+docker exec -e OPENBLAS_NUM_THREADS=1 -e OMP_NUM_THREADS=1 lunar-rover-jazzy-drake fish -c 'cd ~/drake; python acrobot/control_lab/generate.py --variants original clipped unclipped'
 ```
 
-O gerador importa os controladores existentes de `acrobot/lqr.py` e `acrobot/ilqr.py`.
+O gerador importa os controladores de `acrobot/lqr.py`, `acrobot/ilqr.py` e `acrobot/linear_mpc.py`.
 Não lê nem altera `lqr.yaml`. A planta real é `AcrobotPlant`, integrada pelo
 `Simulator` com precisão alvo 1e-9 e torque constante entre amostras de 0,05 s.
 
@@ -40,7 +41,7 @@ Cada execução fica em `runs/<cenario>_<metodo>.json`, com hash da configuraç�
 e das fontes. Dados válidos são reutilizados; `--force` força o recálculo.
 `--scenarios near far --modes finite infinite` restringe o trabalho.
 `--export-only` recompõe `data.json` e `data.js` a partir dos resultados existentes.
-Execute sem filtros para produzir o conjunto completo antes de distribuir o HTML.
+Use `--variants original clipped unclipped` para produzir o conjunto completo antes de distribuir o HTML.
 
 Para criar outras experiências, edite `BASE` / `SCENARIOS` em `generate.py`,
 execute novamente e acrescente a explicação correspondente em `app.js`.
@@ -68,7 +69,12 @@ onde as escalas são compartilhadas entre os métodos.
 - iLQR: um plano não linear de 6 s com feedback local; não reotimiza após perturbações.
 - MPC: iLQR em receding horizon, horizonte padrão 2 s, warm start deslocado, 80 iterações
   máximas no primeiro solve e 6 nos seguintes. Cada cenário pode substituir esses valores.
-- Ambos os LQRs têm saturação posterior ao projeto. iLQR/MPC consideram o limite
+- MPC/LQR: solução analítica via Riccati, ganho preparado uma vez, seguida de clipping quando habilitado.
+- MPC/SQP e MPC/SLSQP: o mesmo QP convexo linear com limites de torque, até 300 iterações por solve. SQP usa Hessiana exata/active set; SLSQP usa SciPy. Isto não implementa SQP não linear.
+- A parametrização por Riccati completa quadrados e dá Hessiana identidade, evitando condensar potências do modelo instável. A transformação preserva o problema e os limites físicos.
+- Resíduo KKT: máximo entre estacionariedade dividida por max(1, norma infinita da variável transformada) e violação primal das restrições com linhas normalizadas. Tolerância 1e-6 para ambos; SLSQP ftol=1e-11. Viabilidade em N·m também é registrada. O fallback de viabilidade usa tolerância 1e-5 nas linhas normalizadas; essa tolerância é convertida de volta para N·m na validação. O comando aplicado sempre recebe clipping exato quando habilitado.
+- Sem limites, os três métodos lineares usam a mesma solução analítica. Com terminal DARE, ela equivale ao LQR infinito do mesmo modelo; diferenças numéricas pequenas podem se amplificar em execuções que perdem estabilidade.
+- Ambos os LQRs e MPC/Riccati têm clipping posterior ao projeto quando habilitado. iLQR/MPC consideram o limite
   escalar no backward pass e no rollout. Não há restrições de posição/velocidade.
 - iLQR/MPC usam RK4 (subpassos ≤ 0,01 s) e terminal DARE local por padrão.
   Há diferenças de discretização e terminal em relação ao LQR: a comparação
@@ -90,7 +96,7 @@ onde as escalas são compartilhadas entre os métodos.
   não linearidade. A perturbação conhecida é descontada no passo correspondente.
 - A simulação **espera** o cálculo. Prazos excedidos são medidos, mas os atrasos
   não são inseridos na dinâmica: os vídeos não demonstram viabilidade em tempo real.
-- As medidas de WallTime são de uma execução por caso, nesta máquina, com possíveis efeitos de
+- As medidas de WallTime das trajetórias são de uma execução por caso, nesta máquina, com possíveis efeitos de
   carga e aquecimento de caches. Mediana/p95 são entre comandos da mesma execução,
   não entre repetições estatísticas. O primeiro solve é separado dos seguintes.
 - No cenário 05, horizonte e terminal mudam juntos. Nos cenários 07/08, também
@@ -113,8 +119,8 @@ Referências: [LQR](https://underactuated.mit.edu/lqr.html),
 
 ## HTML independente e verificações
 
-`acrobot_interativo.html` incorpora CSS, JavaScript, dados e os onze vídeos.
-Esse arquivo pode ser movido sozinho e aberto sem internet. Para reconstruí-lo:
+`acrobot_interativo.html` incorpora CSS, JavaScript, dados e os vídeos das duas famílias de comparação para cada opção de torque.
+Esse arquivo (aproximadamente 56 MB nesta geração) pode ser movido sozinho e aberto sem internet. Para hospedagem web, prefira `index.html` com os arquivos da pasta: os vídeos carregam sob demanda. Para reconstruí-lo:
 
 ```sh
 python3 drake/acrobot/control_lab/build_standalone.py
@@ -122,13 +128,13 @@ python3 drake/acrobot/control_lab/build_standalone.py
 
 Verificações realizadas nesta entrega:
 
-- 19 testes existentes do Acrobot passaram no contêiner Drake.
-- 44 execuções reproduzidas independentemente no Drake a partir dos torques salvos,
+- 25 testes do Acrobot e da formulação MPC linear passaram no contêiner Drake, incluindo comparação com o solver OSQP independente.
+- As 231 execuções foram reproduzidas independentemente no Drake a partir dos torques salvos,
   com diferença máxima de estado igual a zero.
 - Validação de limites, custos aceitos, métricas de convergência, prazos e
   equivalência LQR finito com terminal P∞ / LQR infinito.
 - Teste das interações JavaScript com um DOM simulado (`node test_ui.cjs`).
-- Vídeos decodificados por ffmpeg e quadros inspecionados.
+- 66 vídeos decodificados por ffmpeg (1280 × 720, 181 quadros cada); quadros das duas famílias inspecionados.
 - O serviço local respondeu HTTP 200. Não havia navegador disponível pela
   ferramenta de inspeção: layout e reprodução de mídia no navegador não foram
   verificados visualmente. O teste com DOM simulado não substitui essa revisão.
@@ -142,3 +148,52 @@ na seção “Transparência & reprodução” explica esses termos em portuguê
 WallTime é o tempo decorrido no relógio, incluindo esperas; difere tanto do
 tempo simulado quanto do tempo de CPU. Os nomes das métricas nos dados brutos
 permanecem iguais para preservar a compatibilidade dos arquivos.
+
+
+## SQP × SLSQP e apresentação condicional
+
+Depois de gerar todas as trajetórias, rode sem outras simulações concorrentes:
+
+```sh
+docker exec -e OPENBLAS_NUM_THREADS=1 -e OMP_NUM_THREADS=1 lunar-rover-jazzy-drake fish -c 'cd ~/drake; python acrobot/control_lab/compare_solvers.py; and python acrobot/control_lab/generate.py --export-only'
+python3 drake/acrobot/control_lab/render_videos.py --force
+python3 drake/acrobot/control_lab/build_standalone.py
+```
+
+O benchmark usa seis estados de cada um dos onze desafios com ±3 N·m,
+sempre da trajetória SQP registrada: 66 problemas pareados. Cada par usa o mesmo
+estado, modelo, custo, horizonte, limites e initial guess; são sete repetições,
+com aquecimento excluído e ordem alternada. Não se usam estados diferentes de
+duas trajetórias para alegar uma diferença intrínseca entre solvers. Alguns desafios
+diferem apenas em parâmetros dos métodos não lineares e repetem o mesmo QP;
+os 66 pares não são 66 problemas independentes. Falhas de viabilidade acionam
+um retorno explícito ao initial guess viável, registrado no status de cada par.
+
+Os critérios definidos antes da comparação para mostrar SLSQP separadamente são:
+Δu₀ > 0,1 N·m; diferença de convergência em pelo menos 5% dos pares; ou razão de
+medianas de WallTime ≥ 3 com diferença absoluta ≥ 1 ms. Basta um critério.
+A conclusão e os detalhes estão em `solver_comparison.json`, também incorporado
+no JSON principal. Se os critérios não forem atingidos, a visão principal de
+solvers mostra apenas SQP, Riccati e MPC não linear, mantendo SLSQP nos dados.
+
+As opções “sem clipping” usam `limit: null`, não um limite grande aproximado.
+Torques e velocidades muito grandes podem ocorrer. O replay reconstrói o movimento
+a partir de amostras de 50 ms: não resolve todas as rotações em execuções muito
+rápidas, e mostra um aviso de aliasing nesses casos.
+
+
+## Resultados desta geração
+
+Com ±3 N·m, no desafio 01 o LQR infinito estabilizou em 1,85 s e o MPC
+não linear em 1,70 s. No desafio 11 (17°), somente o MPC não linear entre
+os quatro controladores estabilizou: 3,90 s. No desafio 02 (57°), esse tempo
+foi 2,75 s. Isso não garante que um desvio menor será sempre mais fácil para
+um solver local. Perto e longe do equilíbrio, vários solves do MPC não linear
+excederam o período de 50 ms; a planta simulada aguardou esses cálculos.
+
+O benchmark pareado manteve SQP e SLSQP separados: 10 de 66 pares divergiram
+no critério de convergência (15,2%). A maior diferença no primeiro torque foi
+6 N·m, em casos de falha numérica do SLSQP com retorno ao initial guess viável.
+As medianas de WallTime foram aproximadamente 2,08 ms (SQP) e 1,18 ms (SLSQP).
+A diferença de tempo sozinha não atingiu o critério definido de relevância.
+Esses valores descrevem esta implementação, configuração e máquina.

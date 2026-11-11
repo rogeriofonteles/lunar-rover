@@ -10,7 +10,11 @@ def main():
     html=html.replace('<link rel="stylesheet" href="style.css">','<style>\n'+(ROOT/'style.css').read_text()+'\n</style>')
     html=html.replace('<script src="data.js" defer></script><script src="app.js" defer></script>','')
     data=json.loads((ROOT/'data.json').read_text())
-    media={s['config']['id']:'data:video/mp4;base64,'+base64.b64encode((ROOT/'videos'/f"{s['config']['id']}.mp4").read_bytes()).decode() for s in data['scenarios']}
+    media={}
+    for scenario in data['scenarios']:
+        for suffix in ['', '_solvers']:
+            key=scenario['config']['id']+suffix
+            media[key]='data:video/mp4;base64,'+base64.b64encode((ROOT/'videos'/f'{key}.mp4').read_bytes()).decode()
     for name in ['README.md','generate.py','render_videos.py']:
         uri='data:text/plain;charset=utf-8;base64,'+base64.b64encode((ROOT/name).read_bytes()).decode()
         html=html.replace(f'href="{name}"',f'href="{uri}" download="{name}"')

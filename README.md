@@ -9,7 +9,8 @@ Projeto com três ambientes Docker independentes:
 | ROS 2 Jazzy | Workspace ROS, modelos de rovers e Gazebo | `lunar_rover/` |
 
 O [laboratório interativo do Acrobot](drake/acrobot/control_lab/acrobot_interativo.html)
-é um HTML independente, em PT-BR, com 11 cenários, gráficos e vídeos incorporados.
+é um HTML independente, em PT-BR, com 11 desafios, seletor de clipping em ±3 N·m
+ou torque ilimitado, comparações de controladores/solvers, gráficos e vídeos incorporados.
 Baixe o arquivo e abra no navegador; não precisa instalar os simuladores para explorá-lo.
 O GitHub exibe o arquivo como código, portanto use o download para abri-lo localmente.
 

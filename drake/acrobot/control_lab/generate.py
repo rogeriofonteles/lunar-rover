@@ -22,9 +22,21 @@ ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT.parent.parent))
 from acrobot.lqr import controller_gains, control_torque, wrapped_state_error, _linear_model, _riccati_step
 from acrobot.ilqr import iterative_lqr, RecedingHorizonILQR
+from acrobot.linear_mpc import LinearMPC
 
 TARGET = np.array([math.pi, 0., 0., 0.])
-MODES = ['finite', 'infinite', 'ilqr', 'mpc']
+MODES = ['finite', 'infinite', 'ilqr', 'mpc', 'mpc_lqr', 'mpc_sqp', 'mpc_slsqp']
+VARIANTS = ['original', 'clipped', 'unclipped']
+
+def configurations(variants=VARIANTS):
+    for s in SCENARIOS:
+        for variant in variants:
+            cfg=BASE|s
+            cfg['challenge_id']=s['id']; cfg['torque_mode']=variant
+            if variant!='original':
+                cfg['id']=s['id']+'__'+variant
+                cfg['limit']=3. if variant=='clipped' else None
+            yield cfg
 BASE = dict(dt=.05, duration=6., x0=[math.pi-.03,.03,0.,0.], Q=[10.,10.,1.,1.], R=.1,
             limit=15., mpc_horizon=2., iterations=80, mpc_iterations=6,
             regularization=1e-5, initialization='auto', terminal='Q', kick=None)
@@ -45,7 +57,7 @@ SCENARIOS = [
 
 def signature(cfg, mode):
     h = hashlib.sha256(json.dumps([cfg, mode], sort_keys=True).encode())
-    for f in [Path(__file__), ROOT.parent/'lqr.py', ROOT.parent/'ilqr.py', ROOT.parent/'trajectory_seed.py']:
+    for f in [Path(__file__), ROOT.parent/'lqr.py', ROOT.parent/'ilqr.py', ROOT.parent/'trajectory_seed.py', ROOT.parent/'linear_mpc.py']:
         h.update(f.read_bytes())
     return h.hexdigest()
 
@@ -63,11 +75,13 @@ def run(cfg, mode):
     options = dict(timestep=dt, horizon=n, Q=Q, R=R, torque_limit=bound,
                    max_iterations=cfg['iterations'], tolerance=1e-5,
                    regularization=cfg['regularization'], initialization=cfg['initialization'])
-    plan = None; receding = None; solves = []; warning_messages=[]
+    plan = None; receding = None; linear = None; solves = []; warning_messages=[]
     def record(result, seconds, k):
         solves.append(dict(step=k, time=k*dt, ms=seconds*1000, converged=bool(result.converged),
                            iterations=result.iterations, status=result.status, initialization=result.initialization,
-                           costs=[float(c) for c in result.costs]))
+                           costs=[float(c) for c in result.costs],
+                           residual=getattr(result,'residual',None), bound_violation=getattr(result,'bound_violation',None),
+                           history_kind='iterates' if linear else 'accepted'))
     t0 = perf_counter()
     if mode in ('finite', 'infinite'):
         terminal = None
@@ -88,6 +102,9 @@ def run(cfg, mode):
             plan = iterative_lqr(model, cfg['x0'], **options)
         warning_messages.extend(str(w.message) for w in notices)
         record(plan, perf_counter()-t0, 0)
+    elif mode.startswith('mpc_'):
+        solver={'mpc_lqr':'riccati','mpc_sqp':'sqp','mpc_slsqp':'slsqp'}[mode]
+        linear=LinearMPC(model,timestep=dt,horizon=round(cfg['mpc_horizon']/dt),Q=Q,R=R,torque_limit=bound,solver=solver,terminal_cost=Q if cfg.get('mpc_terminal')=='Q' else None)
     else:
         options['horizon'] = round(cfg['mpc_horizon']/dt)
         if cfg.get('mpc_terminal') == 'Q': options['terminal_cost'] = Q
@@ -103,7 +120,12 @@ def run(cfg, mode):
         x = ctx.get_continuous_state_vector().CopyToVector()
         states.append(x.tolist())
         tic=perf_counter()
-        if receding:
+        if linear:
+            u=linear.command(x)
+            elapsed=perf_counter()-tic
+            record(linear.last_result,elapsed,k)
+            if k%10==0:predicted.append(dict(step=k,states=linear.last_result.states.tolist()))
+        elif receding:
             with warnings.catch_warnings(record=True) as notices:
                 warnings.simplefilter('always')
                 u = receding.command(x)
@@ -115,7 +137,7 @@ def run(cfg, mode):
                 predicted.append(dict(step=k, states=receding.last_result.states.tolist()))
         elif plan:
             u = float(plan.controls[k] - (plan.gains[k] @ wrapped_state_error(x, plan.states[k])).item())
-            u = float(np.clip(u,-bound,bound))
+            if bound is not None:u = float(np.clip(u,-bound,bound))
             elapsed=perf_counter()-tic
         else:
             gain = gains[k] if mode=='finite' else gains[0]
@@ -142,17 +164,17 @@ def run(cfg, mode):
         if cfg['kick'] and k+1==round(cfg['kick']['time']/dt): actual-=cfg['kick']['delta']
         residual.append(float(np.linalg.norm(actual-ep)))
     solve_ms=[s['ms'] for s in solves]
-    online=command_ms[1:] if mode=='mpc' else command_ms
+    online=command_ms[1:] if mode=='mpc' or linear else command_ms
     result=dict(mode=mode, cfg=cfg, warnings=warning_messages, time=(np.arange(n+1)*dt).tolist(), states=states, torque=torques,
                 command_ms=command_ms, solves=solves, predictions=predicted,
                 nominal=plan.states.tolist() if plan else None,
-                metrics=dict(setup_ms=setup_ms, first_solution_ms=solve_ms[0] if solves else setup_ms,
+                metrics=dict(setup_ms=setup_ms, first_solution_ms=(setup_ms+solve_ms[0] if linear else solve_ms[0]) if solves else setup_ms,
                              online_median_ms=float(np.median(online)), online_p95_ms=float(np.percentile(online,95)),
                              online_max_ms=float(max(online)), total_solver_ms=sum(solve_ms) if solves else setup_ms,
                              deadline_misses=int(sum(t>dt*1000 for t in online)), online_samples=len(online),
                              settling_s=settled, final_angle_rad=float(max(abs(errors[-1,:2]))),
                              final_speed_rad_s=float(max(abs(errors[-1,2:]))),
-                             peak_torque=float(max(abs(us))), saturation_pct=float(np.mean(abs(us)>=bound-1e-8)*100),
+                             peak_torque=float(max(abs(us))), saturation_pct=float(np.mean(abs(us)>=bound-1e-8)*100) if bound is not None else 0.,
                              angle_rms_rad=float(np.sqrt(np.mean(errors[:,:2]**2))),
                              effort=float(dt*np.sum(us**2)),
                              nonconverged=sum(not s['converged'] for s in solves),
@@ -165,28 +187,29 @@ def run(cfg, mode):
 
 def export():
     scenarios=[]
-    for s in SCENARIOS:
-        cfg=BASE|s; runs={}
+    for cfg in configurations():
+        runs={}
         for m in MODES:
-            p=ROOT/'runs'/f"{s['id']}_{m}.json"
+            p=ROOT/'runs'/f"{cfg['id']}_{m}.json"
             if p.exists(): runs[m]=json.loads(p.read_text())
         if runs: scenarios.append(dict(config=cfg,runs=runs))
     meta=dict(generated_at=datetime.now(timezone.utc).isoformat(), drake=importlib.metadata.version('drake'),
-              python=platform.python_version(), platform=platform.platform(), cpu=platform.processor(),
+              scipy=importlib.metadata.version('scipy'), python=platform.python_version(), platform=platform.platform(), cpu=platform.processor(),
               threads={k:os.getenv(k) for k in ['OPENBLAS_NUM_THREADS','OMP_NUM_THREADS']},
-              source_hashes={f:hashlib.sha256((ROOT.parent/f).read_bytes()).hexdigest() for f in ['lqr.py','ilqr.py','trajectory_seed.py']})
+              source_hashes={f:hashlib.sha256((ROOT.parent/f).read_bytes()).hexdigest() for f in ['lqr.py','ilqr.py','trajectory_seed.py','linear_mpc.py']})
     data=dict(metadata=meta,scenarios=scenarios)
+    comparison=ROOT/'solver_comparison.json'
+    if comparison.exists():data['solver_comparison']=json.loads(comparison.read_text())
     (ROOT/'data.json').write_text(json.dumps(data,ensure_ascii=False,allow_nan=False))
     (ROOT/'data.js').write_text('window.ACROBOT_DATA = '+json.dumps(data,ensure_ascii=False,allow_nan=False)+';\n')
 
 
 def main():
-    p=argparse.ArgumentParser(); p.add_argument('--scenarios',nargs='*'); p.add_argument('--modes',nargs='*',default=MODES); p.add_argument('--force',action='store_true'); p.add_argument('--export-only',action='store_true')
+    p=argparse.ArgumentParser(); p.add_argument('--scenarios',nargs='*'); p.add_argument('--modes',nargs='*',default=MODES,choices=MODES); p.add_argument('--variants',nargs='*',default=['original'],choices=VARIANTS); p.add_argument('--force',action='store_true'); p.add_argument('--export-only',action='store_true')
     args=p.parse_args(); (ROOT/'runs').mkdir(exist_ok=True)
     if not args.export_only:
-        for scenario in SCENARIOS:
-            if args.scenarios and scenario['id'] not in args.scenarios: continue
-            cfg=BASE|scenario
+        for cfg in configurations(args.variants):
+            if args.scenarios and cfg['challenge_id'] not in args.scenarios: continue
             for mode in args.modes:
                 path=ROOT/'runs'/f"{cfg['id']}_{mode}.json"; digest=signature(cfg,mode)
                 if path.exists() and not args.force and json.loads(path.read_text()).get('signature')==digest: continue

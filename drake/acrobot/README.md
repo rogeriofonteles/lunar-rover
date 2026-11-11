@@ -193,11 +193,23 @@ optimizer convergence, and the final report includes peak applied torque.
 ### Laboratório interativo em PT-BR
 
 Abra [control_lab/acrobot_interativo.html](control_lab/acrobot_interativo.html)
-no navegador: um único arquivo offline com onze cenários, 44 execuções reais
-no Drake, gráficos sincronizados e onze vídeos comparando LQR finito/infinito,
-iLQR e MPC não linear. A interface distingue estabilização física,
+no navegador: um único arquivo offline com onze desafios e três opções de torque
+(original, clipping em ±3 N·m e sem clipping), gráficos sincronizados e vídeos.
+A visão principal compara LQR infinito com MPC não linear; a visão completa
+acrescenta LQR finito e iLQR. Uma comparação separada mostra MPC com Riccati/LQR
+e QP com SQP; SLSQP aparece separadamente quando o benchmark pareado identifica
+diferença relevante. Todos os resultados são gerados na planta não linear do Drake. A interface distingue estabilização física,
 convergência do solver e viabilidade do período de controle.
 
 Os experimentos são pré-calculados. Código, dados brutos, procedimentos de
 reprodução e limites de validação estão em
 [control_lab/README.md](control_lab/README.md).
+
+
+Os novos controladores lineares do laboratório estão em `linear_mpc.py`.
+`solver="riccati"` resolve o LQ sem restrições; o comando recebe clipping posterior
+quando habilitado. `solver="sqp"` usa active set com Hessiana exata para o QP;
+`solver="slsqp"` usa SciPy para o mesmo problema. Ambos incluem as restrições de
+torque. A formulação usa completion of squares por Riccati, com Hessiana identidade,
+para evitar potências instáveis na condensação. Esses modos são usados pelo gerador
+do laboratório; não são novos valores de `--mode` no entry point original.

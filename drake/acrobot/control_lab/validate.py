@@ -11,31 +11,38 @@ from pydrake.systems.analysis import Simulator
 ROOT=Path(__file__).resolve().parent
 sys.path.insert(0,str(ROOT.parent.parent))
 from acrobot.lqr import wrapped_state_error
+from acrobot.linear_mpc import LinearMPC
 
 
 def main():
-    data=json.loads((ROOT/'data.json').read_text()); assert len(data['scenarios'])==11
+    data=json.loads((ROOT/'data.json').read_text()); assert len(data['scenarios'])==33
+    for challenge in {s['config']['challenge_id'] for s in data['scenarios']}:
+        assert {s['config']['torque_mode'] for s in data['scenarios'] if s['config']['challenge_id']==challenge}=={'original','clipped','unclipped'}
     maximum=0.; count=0
     for scenario in data['scenarios']:
         cfg=scenario['config'];dt=cfg['dt'];n=round(cfg['duration']/dt)
-        assert set(scenario['runs'])=={'finite','infinite','ilqr','mpc'}
+        linear=LinearMPC(AcrobotPlant(),timestep=dt,horizon=round(cfg['mpc_horizon']/dt),Q=np.diag(cfg['Q']),R=cfg['R'],torque_limit=cfg['limit'],terminal_cost=np.diag(cfg['Q']) if cfg.get('mpc_terminal')=='Q' else None)
+        # Solver feasibility uses normalized rows; convert its tolerance back to N·m.
+        physical_tolerance=1e-5*max(linear.row_norm)+1e-8
+        assert set(scenario['runs'])=={'finite','infinite','ilqr','mpc','mpc_lqr','mpc_sqp','mpc_slsqp'}
         for mode,r in scenario['runs'].items():
             xs=np.array(r['states']);u=np.array(r['torque']);times=np.array(r['time']);m=r['metrics']
             assert xs.shape==(n+1,4) and u.shape==(n,)
             assert np.isfinite(xs).all() and np.isfinite(u).all()
             np.testing.assert_allclose(times,np.arange(n+1)*dt,atol=1e-12)
             np.testing.assert_allclose(xs[0],cfg['x0'],atol=1e-12)
-            assert max(abs(u))<=cfg['limit']+1e-8
+            if cfg['limit'] is not None:assert max(abs(u))<=cfg['limit']+1e-8
             for solve in r['solves']:
-                assert solve['ms']>=0 and solve['iterations']>=1
-                assert all(b<a for a,b in zip(solve['costs'],solve['costs'][1:]))
-            assert len(r['solves'])==(n if mode=='mpc' else 1 if mode=='ilqr' else 0)
+                assert solve['ms']>=0 and solve['iterations']>=0
+                if mode in ['ilqr','mpc']:assert all(b<a for a,b in zip(solve['costs'],solve['costs'][1:]))
+                if mode in ['mpc_sqp','mpc_slsqp']:assert solve['bound_violation']<=physical_tolerance
+            assert len(r['solves'])==(n if mode.startswith('mpc') else 1 if mode=='ilqr' else 0)
             err=wrapped_state_error(xs,[np.pi,0,0,0]);ok=(abs(err[:,:2]).max(axis=1)<.05)&(abs(err[:,2:]).max(axis=1)<.1)
             last=np.flatnonzero(~ok);first=last[-1]+1 if len(last) else 0
             expected=float(first*dt) if first<=n-round(1/dt) else None
             assert m['settling_s']==expected
             assert abs(m['final_angle_rad']-max(abs(err[-1,:2])))<1e-12
-            sample=r['command_ms'][1:] if mode=='mpc' else r['command_ms']
+            sample=r['command_ms'][1:] if mode.startswith('mpc') else r['command_ms']
             assert m['deadline_misses']==sum(t>dt*1000 for t in sample)
             np.testing.assert_allclose(m['online_p95_ms'],np.percentile(sample,95))
             # Independent execution, using saved torques rather than controller calls.
@@ -51,6 +58,10 @@ def main():
             error=float(abs(np.array(replay)-xs).max());maximum=max(maximum,error)
             np.testing.assert_allclose(replay,xs,rtol=1e-8,atol=1e-8,err_msg=f"{cfg['id']}/{mode}")
             count+=1
+    comparison=data['solver_comparison']
+    assert comparison['pairs']==66 and comparison['repetitions']==7
+    for pair in comparison['details']:
+        assert pair['sqp_violation']<1e-5 and pair['slsqp_violation']<1e-5
     terminal=next(s for s in data['scenarios'] if s['config']['id']=='terminal')['runs']
     np.testing.assert_allclose(terminal['finite']['states'],terminal['infinite']['states'],atol=1e-5,rtol=1e-5)
     print(f'PASS: {count} runs; complete data, torque limits, costs, timings, settling and Drake replay.')

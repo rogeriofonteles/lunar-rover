@@ -25,19 +25,30 @@ vm.createContext(sandbox);
 if(standalone){
  assert(!/<script[^>]+src=|<link[^>]+stylesheet/.test(html));
  vm.runInContext([...html.matchAll(/<script>([\s\S]*?)<\/script>/g)].map(m=>m[1]).join('\n'),sandbox);
- assert.equal(Object.keys(sandbox.window.ACROBOT_MEDIA).length,11);
+ assert.equal(Object.keys(sandbox.window.ACROBOT_MEDIA).length,66);
  assert(el('video').src.startsWith('data:video/mp4;base64,'));
 }else{vm.runInContext(fs.readFileSync(path.join(root,'data.js'),'utf8'),sandbox);vm.runInContext(fs.readFileSync(path.join(root,'app.js'),'utf8'),sandbox);}
-const D=sandbox.window.ACROBOT_DATA;assert.equal(el('scenario-list').children.length,11);
+const D=sandbox.window.ACROBOT_DATA;const challenges=D.scenarios.filter(s=>s.config.torque_mode==='original');assert.equal(el('scenario-list').children.length,11);assert.equal(D.scenarios.length,33);
 for(let i=0;i<11;i++){
- el('scenario-list').children[i].click();assert.equal(el('scenario-title').textContent,D.scenarios[i].config.title);
- assert.equal((el('metrics').innerHTML.match(/<tr>/g)||[]).length,4);
- assert(!/NaN|undefined/.test(el('metrics').innerHTML+el('findings').innerHTML));
- el('timeline').oninput({target:{value:'3.5'}});assert(el('clock').textContent.startsWith('3,50'));
- el('solver-select').value='mpc';el('solver-select').onchange();el('solve-index').value='119';el('solve-index').oninput();assert(el('solve-time').textContent.includes('5,95'));
- el('solver-select').value='ilqr';el('solver-select').onchange();assert(el('solve-index').disabled);
- el('csv').click();assert(blob.size>1000);
+ for(const torque of ['original','clipped','unclipped']){
+  el('torque-mode').value=torque;
+  for(const family of ['focus','all','solvers']){
+   el('comparison-mode').value=family;
+   el('scenario-list').children[i].click();assert.equal(el('scenario-title').textContent,challenges[i].config.title);
+   const count=family==='focus'?2:family==='all'?4:(D.solver_comparison.show_slsqp?4:3);
+   assert.equal((el('metrics').innerHTML.match(/<tr>/g)||[]).length,count);
+   assert(!/NaN|undefined/.test(el('metrics').innerHTML+el('findings').innerHTML+el('torque-impact').innerHTML));
+   if(torque==='unclipped')assert(el('parameters').innerHTML.includes('Sem clipping'));
+   if(torque==='clipped')assert(el('parameters').innerHTML.includes('±3 N·m'));
+   el('timeline').oninput({target:{value:'3.5'}});assert(el('clock').textContent.startsWith('3,50'));
+   el('solver-select').value='mpc';el('solver-select').onchange();el('solve-index').value='119';el('solve-index').oninput();assert(el('solve-time').textContent.includes('5,95'));
+   if(family==='all'){el('solver-select').value='ilqr';el('solver-select').onchange();assert(el('solve-index').disabled);}
+   if(family==='solvers'){el('solver-select').value='mpc_sqp';el('solver-select').onchange();assert(el('solver-detail').innerHTML.includes('KKT'));}
+   el('csv').click();assert(blob.size>1000);
+  }
+ }
 }
+el('comparison-mode').value='all';el('torque-mode').value='original';
 el('scenario-list').children[0].click();el('unit').value='deg';el('unit').onchange();el('angle-mode').value='absolute';el('angle-mode').onchange();assert(el('angle2-title').textContent.includes('absoluta'));
 for(const mode of ['finite','infinite','ilqr','mpc'])el('legend').listeners.change({target:{dataset:{mode},checked:false}});
 for(const mode of ['finite','infinite','ilqr','mpc'])el('legend').listeners.change({target:{dataset:{mode},checked:true}});
@@ -45,4 +56,4 @@ el('restart').click();el('play').click();clock=1000;raf(clock);assert(el('clock'
 el('speed').value='2';clock=2000;raf(clock);assert(el('clock').textContent.startsWith('3,00'));
 clock=4000;raf(clock);assert(el('clock').textContent.startsWith('6,00'));assert.equal(el('play').textContent,'▶');el('restart').click();assert(el('clock').textContent.startsWith('0,00'));
 for(const id of ['trail','nominal','predictions']){el(id).checked=!el(id).checked;el(id).onchange();}
-console.log('PASS: 11 scenarios, replay, speed, scrubbing, units, overlays, filters, optimizer inspection and CSV (DOM double; not browser QA).');
+console.log('PASS: 11 challenges × 3 torque options × 3 views; replay, units, solvers and CSV (DOM double; not browser QA).');
