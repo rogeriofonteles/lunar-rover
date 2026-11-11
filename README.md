@@ -10,9 +10,12 @@ Projeto com três ambientes Docker independentes:
 
 O [laboratório interativo do Acrobot](drake/acrobot/control_lab/acrobot_interativo.html)
 é um HTML independente, em PT-BR, com 11 desafios, seletor de clipping em ±3 N·m
-ou torque ilimitado, comparações de controladores/solvers, gráficos e vídeos incorporados.
+ou torque ilimitado, gráficos e vídeos incorporados. A comparação de MPC não linear
+usa iLQR, SQP e SLSQP com derivadas atualizadas ao longo da trajetória; as referências
+MPC lineares ficam em uma visão separada.
 Baixe o arquivo e abra no navegador; não precisa instalar os simuladores para explorá-lo.
 O GitHub exibe o arquivo como código, portanto use o download para abri-lo localmente.
+Também é possível [abrir a comparação de MPCs no GitHub Pages](https://rogeriofonteles.github.io/lunar-rover/drake/acrobot/control_lab/?comparacao=solvers&torque=clipped).
 
 ## Executar em outro PC
 

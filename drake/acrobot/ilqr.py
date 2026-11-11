@@ -21,6 +21,7 @@ class ILQRResult:
     status: str
     terminal_cost: np.ndarray
     initialization: str = "provided"
+    initial_controls: np.ndarray | None = None
 
 
 def nonlinear_step(plant, timestep):
@@ -47,13 +48,35 @@ def nonlinear_step(plant, timestep):
         if not np.all(np.isfinite(x)):
             raise FloatingPointError("Non-finite nonlinear rollout")
         return x
+    # Exact derivatives of this RK4 discretization, shared by all nonlinear solvers.
+    # Create the AutoDiff plant lazily: plain rollouts continue to use doubles.
+    ad_cache = []
+    def jacobian(x, u):
+        from pydrake.autodiffutils import InitializeAutoDiff, ExtractGradient
+        if not ad_cache:
+            ad_plant = plant.ToAutoDiffXd()
+            ad_cache.extend([ad_plant, ad_plant.CreateDefaultContext(), ad_plant.get_input_port(0)])
+        ad_plant, ad_context, ad_port = ad_cache
+        z = InitializeAutoDiff(np.r_[x, u]).ravel()
+        state, torque = z[:4], z[4]
+        def f(q):
+            ad_context.SetContinuousState(q); ad_port.FixValue(ad_context, [torque])
+            return ad_plant.EvalTimeDerivatives(ad_context).CopyToVector()
+        for _ in range(count):
+            a=f(state); b=f(state+dt*a/2); c=f(state+dt*b/2); d=f(state+dt*c)
+            state=state+dt*(a+2*b+2*c+d)/6
+        J=ExtractGradient(state)
+        if not np.isfinite(J).all():raise FloatingPointError('Non-finite RK4 Jacobian')
+        return J[:,:4],J[:,4:5]
+    step.jacobian = jacobian
     return step
 
 
 def iterative_lqr(plant, initial_state, timestep=.01, horizon=100, Q=None, R=1.,
                   terminal_cost=None, equilibrium_state=None, torque_limit=None,
                   max_iterations=50, tolerance=1e-6, regularization=1e-5,
-                  state_damping=1., control_damping=1., initial_controls=None, initialization="auto"):
+                  state_damping=1., control_damping=1., initial_controls=None, initialization="auto",
+                  initialize_only=False):
     """Optimize a nonlinear finite plan, returning its trajectory and feedback.
 
     Damping scales lambda I in the value-state Hessian and control Q_uu
@@ -116,11 +139,9 @@ def iterative_lqr(plant, initial_state, timestep=.01, horizon=100, Q=None, R=1.,
 
     def backward(xs, us, damping):
         # Jacobians of the actual discrete nonlinear rollout, not Euler dynamics.
-        As = []; Bs = []; eps = 1e-5
+        As = []; Bs = []
         for x, u in zip(xs[:-1], us):
-            A = np.column_stack([(dynamics(x + eps*v, u)-dynamics(x-eps*v, u))/(2*eps)
-                                 for v in np.eye(4)])
-            B = ((dynamics(x, u+eps)-dynamics(x, u-eps))/(2*eps)).reshape(4, 1)
+            A,B = dynamics.jacobian(x,u)
             As.append(A); Bs.append(B)
         Vx = Qf @ wrapped_state_error(xs[-1], target); Vxx = Qf.copy()
         ks = np.zeros(horizon); gains = np.zeros((horizon, 1, 4))
@@ -153,10 +174,7 @@ def iterative_lqr(plant, initial_state, timestep=.01, horizon=100, Q=None, R=1.,
     seeds = [("zero" if initial_controls is None else "provided", controls)]
     if initial_controls is None or terminal_cost is None:
         try:
-            eps = 1e-5
-            A = np.column_stack([(dynamics(target+eps*v, 0)-dynamics(target-eps*v, 0))/(2*eps)
-                                 for v in np.eye(4)])
-            B = ((dynamics(target, eps)-dynamics(target, -eps))/(2*eps)).reshape(4, 1)
+            A,B = dynamics.jacobian(target,0.)
             value = Q.copy()
             for _ in range(10000):
                 gain, updated = _riccati_step(A, B, Q, R, value)
@@ -205,6 +223,9 @@ def iterative_lqr(plant, initial_state, timestep=.01, horizon=100, Q=None, R=1.,
     costs = [cost]; damping = regularization
     converged = False; status = "maximum iterations reached"
     gains = np.zeros((horizon, 1, 4))
+    shared_seed=controls.copy()
+    if initialize_only:
+        return ILQRResult(states,controls,gains,costs,False,0,'initialization only',Qf.copy(),seed_label,shared_seed)
     for iteration in range(1, max_iterations+1):
         try:
             ks, candidate_gains = backward(states, controls, damping)
@@ -242,7 +263,7 @@ def iterative_lqr(plant, initial_state, timestep=.01, horizon=100, Q=None, R=1.,
     except (np.linalg.LinAlgError, FloatingPointError):
         status = "final backward pass failed"; converged = False
         gains = np.zeros_like(gains)
-    return ILQRResult(states, controls, gains, costs, converged, iteration, status, Qf.copy(), seed_label)
+    return ILQRResult(states, controls, gains, costs, converged, iteration, status, Qf.copy(), seed_label,shared_seed)
 
 
 class RecedingHorizonILQR:

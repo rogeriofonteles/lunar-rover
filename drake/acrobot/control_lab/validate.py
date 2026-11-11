@@ -12,6 +12,7 @@ ROOT=Path(__file__).resolve().parent
 sys.path.insert(0,str(ROOT.parent.parent))
 from acrobot.lqr import wrapped_state_error
 from acrobot.linear_mpc import LinearMPC
+from acrobot.ilqr import nonlinear_step
 
 
 def main():
@@ -23,7 +24,7 @@ def main():
         cfg=scenario['config'];dt=cfg['dt'];n=round(cfg['duration']/dt)
         linear=LinearMPC(AcrobotPlant(),timestep=dt,horizon=round(cfg['mpc_horizon']/dt),Q=np.diag(cfg['Q']),R=cfg['R'],torque_limit=cfg['limit'],terminal_cost=np.diag(cfg['Q']) if cfg.get('mpc_terminal')=='Q' else None)
         physical_tolerance=1e-8
-        assert set(scenario['runs'])=={'finite','infinite','ilqr','mpc','mpc_lqr','mpc_sqp','mpc_slsqp'}
+        assert set(scenario['runs'])=={'finite','infinite','ilqr','mpc','mpc_lqr','mpc_sqp','mpc_slsqp','mpc_nonlinear_sqp','mpc_nonlinear_slsqp'}
         for mode,r in scenario['runs'].items():
             xs=np.array(r['states']);u=np.array(r['torque']);times=np.array(r['time']);m=r['metrics']
             assert xs.shape==(n+1,4) and u.shape==(n,)
@@ -33,8 +34,8 @@ def main():
             if cfg['limit'] is not None:assert max(abs(u))<=cfg['limit']+1e-8
             for solve in r['solves']:
                 assert solve['ms']>=0 and solve['iterations']>=0
-                if mode in ['ilqr','mpc']:assert all(b<a for a,b in zip(solve['costs'],solve['costs'][1:]))
-                if mode.startswith('mpc_'):
+                if mode in ['ilqr','mpc','mpc_nonlinear_sqp']:assert all(b<a for a,b in zip(solve['costs'],solve['costs'][1:]))
+                if mode in ['mpc_lqr','mpc_sqp','mpc_slsqp']:
                     assert solve['returned_cost']>=0 and solve['initial_cost']>=0
                     assert solve['native_status'] and solve['recovery'] in ['none','box_projection','initial_guess']
                     if mode in ['mpc_sqp','mpc_slsqp']:
@@ -42,7 +43,7 @@ def main():
                         if solve['converged']:assert solve['residual']<=1e-6 and solve['relative_dual_gap']<=1e-6
                         assert solve['returned_cost']<=solve['initial_cost']+1e-7*max(1.,solve['initial_cost'])
                 # Independently integrate each saved forecast and recompute returned cost.
-            if mode.startswith('mpc_'):
+            if mode in ['mpc_lqr','mpc_sqp','mpc_slsqp']:
                 for prediction in r['predictions']:
                     k=prediction['step'];pred=np.array(prediction['states'])-linear.target
                     controls=np.array([np.linalg.lstsq(linear.B,(right-linear.A@left),rcond=None)[0][0] for left,right in zip(pred[:-1],pred[1:])])
@@ -50,6 +51,28 @@ def main():
                     cost=.5*sum(e@linear.Q@e+linear.R*u*u for e,u in zip(pred[:-1],controls))+.5*pred[-1]@linear.Qf@pred[-1]
                     np.testing.assert_allclose(r['solves'][k]['returned_cost'],cost,rtol=1e-7,atol=1e-7)
                     if cfg['limit'] is not None and mode!='mpc_lqr':assert max(abs(controls))<=cfg['limit']+1e-7
+            if mode in ['mpc','mpc_nonlinear_sqp','mpc_nonlinear_slsqp']:
+                first=r['solves'][0];reference=scenario['runs']['mpc']['solves'][0]
+                np.testing.assert_allclose(first['initial_controls'],reference['initial_controls'],atol=1e-10,rtol=1e-10)
+                np.testing.assert_allclose(first['terminal_cost'],reference['terminal_cost'],atol=1e-10)
+                for prediction in r['predictions']:
+                    step=nonlinear_step(AcrobotPlant(),dt);pred=np.asarray(prediction['states']);controls=np.asarray(prediction['controls'])
+                    np.testing.assert_allclose(pred[0],xs[prediction['step']],atol=1e-12)
+                    for k,command in enumerate(controls):np.testing.assert_allclose(step(pred[k],command),pred[k+1],atol=1e-11)
+                    errors=wrapped_state_error(pred,[np.pi,0,0,0]);Q=np.diag(cfg['Q']);Qf=np.asarray(first['terminal_cost'])
+                    cost=.5*sum(e@Q@e+cfg['R']*command**2 for e,command in zip(errors[:-1],controls))+.5*errors[-1]@Qf@errors[-1]
+                    solve=r['solves'][prediction['step']]
+                    returned=solve['returned_cost'] if solve['returned_cost'] is not None else solve['costs'][-1]
+                    np.testing.assert_allclose(returned,cost,atol=1e-8,rtol=1e-8)
+                    if cfg['limit'] is not None:assert max(abs(controls))<=cfg['limit']+1e-8
+                if mode!='mpc':
+                    for solve in r['solves']:
+                        assert solve['formulation']=='nonlinear_shooting'
+                        assert solve['recovery']=='best_nonlinear_rollout'
+                        assert solve['bound_violation']<=1e-8
+                        assert solve['returned_cost']<=solve['initial_cost']+1e-8
+                        assert len(solve['linearizations'])>=1
+                        if solve['converged']:assert solve['residual']<=1e-5
             assert len(r['solves'])==(n if mode.startswith('mpc') else 1 if mode=='ilqr' else 0)
             err=wrapped_state_error(xs,[np.pi,0,0,0]);ok=(abs(err[:,:2]).max(axis=1)<.05)&(abs(err[:,2:]).max(axis=1)<.1)
             last=np.flatnonzero(~ok);first=last[-1]+1 if len(last) else 0
@@ -72,6 +95,7 @@ def main():
             error=float(abs(np.array(replay)-xs).max());maximum=max(maximum,error)
             np.testing.assert_allclose(replay,xs,rtol=1e-8,atol=1e-8,err_msg=f"{cfg['id']}/{mode}")
             count+=1
+        print(f'Validated {cfg["id"]}: {count} runs so far',flush=True)
     comparison=data['solver_comparison']
     assert comparison['pairs']==66 and comparison['repetitions']==7
     assert comparison['reference_solver']=='Drake Clarabel'

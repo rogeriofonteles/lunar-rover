@@ -96,8 +96,8 @@ choose the horizon to cover the intended maneuver duration.
 docker exec -it lunar-rover-jazzy-drake fish -c 'cd ~/drake; python acrobot/acrobot_test.py --mode ilqr --horizon 500'
 ```
 
-The optimizer uses RK4 with internal steps at most 0.01 seconds and finite
-differences of that nonlinear discrete model. It minimizes quadratic state
+The optimizer uses RK4 with internal steps at most 0.01 seconds and Drake
+AutoDiff derivatives of that same nonlinear discrete model. It minimizes quadratic state
 error and torque costs (Q = diag(10, 10, 1, 1), R = 1). The default iLQR terminal
 cost is the local discrete Riccati value matrix computed from the RK4 model,
 so it accounts for balancing beyond the endpoint (Q is the fallback if no
@@ -196,10 +196,13 @@ Abra [control_lab/acrobot_interativo.html](control_lab/acrobot_interativo.html)
 no navegador: um único arquivo offline com onze desafios e três opções de torque
 (original, clipping em ±3 N·m e sem clipping), gráficos sincronizados e vídeos.
 A visão principal compara LQR infinito com MPC não linear; a visão completa
-acrescenta LQR finito e iLQR. Uma comparação separada mostra MPC com Riccati/LQR
-e QP com SQP; SLSQP aparece separadamente quando o benchmark pareado identifica
-diferença relevante, com opção de exibi-lo manualmente. Todos os resultados são gerados na planta não linear do Drake. A interface distingue estabilização física,
-convergência do solver e viabilidade do período de controle.
+acrescenta LQR finito e iLQR. A visão de MPC não linear compara iLQR, SQP
+Gauss–Newton e SLSQP, todos com rollout RK4 e derivadas recalculadas ao longo da
+trajetória por AutoDiff do Drake. O modelo, custos, horizonte e regra de initial
+guess são comuns; cada método passa a deslocar sua própria solução como warm start.
+A referência linear fica em uma visão separada: Riccati, QP via active set e
+SLSQP opcional. Todos executam na planta não linear do Drake. A interface distingue
+estacionariedade local, estabilização física e prazo de controle.
 
 Os experimentos são pré-calculados. Código, dados brutos, procedimentos de
 reprodução e limites de validação estão em
@@ -219,3 +222,11 @@ recebem projeção dos torques e novo rollout; o fallback mantém o melhor plano
 viável disponível. O resultado distingue custo inicial, candidato e plano
 retornado, além de status nativo, reparo e certificado QP com gap dual relativo.
 O benchmark usa entradas congeladas e uma referência Clarabel independente.
+
+Os novos NMPCs SQP/SLSQP estão em `nonlinear_sqp.py`, também usados pelo gerador
+sem alterar os modos do entry point original. Ambos usam single shooting com
+A/B atualizados na trajetória. SQP resolve novos QPs Gauss–Newton com Clarabel;
+SLSQP recebe custo/gradiente não lineares e usa sua própria Hessiana quase-Newton.
+Os dados registram as atualizações de linearização e o custo do melhor rollout
+viável retornado. O laboratório contém 297 trajetórias e 99 vídeos; veja os
+critérios de parada, limitações de condicionamento e reprodução no guia acima.

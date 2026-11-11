@@ -7,16 +7,16 @@
     $('scenario-subtitle').textContent = 'Execute generate.py no contêiner Drake e mantenha data.js ao lado deste HTML.';
     return;
   }
-  const names = {finite:'LQR finito',infinite:'LQR infinito',ilqr:'iLQR',mpc:'MPC não linear',mpc_lqr:'MPC · LQR/Riccati',mpc_sqp:'MPC · SQP',mpc_slsqp:'MPC · SLSQP'};
-  const colors = {finite:'#bb7527',infinite:'#287a9a',ilqr:'#995eae',mpc:'#148269',mpc_lqr:'#287a9a',mpc_sqp:'#bb7527',mpc_slsqp:'#995eae'};
-  const bright = {finite:'#e9b16d',infinite:'#80bfdd',ilqr:'#c8a3e1',mpc:'#7dcdb0',mpc_lqr:'#80bfdd',mpc_sqp:'#e9b16d',mpc_slsqp:'#c8a3e1'};
+  const names = {finite:'LQR finito',infinite:'LQR infinito',ilqr:'iLQR',mpc:'NMPC · iLQR',mpc_lqr:'MPC linear · Riccati',mpc_sqp:'MPC linear · active set',mpc_slsqp:'MPC linear · SLSQP',mpc_nonlinear_sqp:'NMPC · SQP',mpc_nonlinear_slsqp:'NMPC · SLSQP'};
+  const colors = {finite:'#bb7527',infinite:'#287a9a',ilqr:'#995eae',mpc:'#148269',mpc_lqr:'#287a9a',mpc_sqp:'#bb7527',mpc_slsqp:'#995eae',mpc_nonlinear_sqp:'#bb7527',mpc_nonlinear_slsqp:'#995eae'};
+  const bright = {finite:'#e9b16d',infinite:'#80bfdd',ilqr:'#c8a3e1',mpc:'#7dcdb0',mpc_lqr:'#80bfdd',mpc_sqp:'#e9b16d',mpc_slsqp:'#c8a3e1',mpc_nonlinear_sqp:'#e9b16d',mpc_nonlinear_slsqp:'#c8a3e1'};
   let modes = ['infinite','mpc'];
   const challenges=data.scenarios.filter(s=>(s.config.torque_mode||'original')==='original');
   const wrap = q => ((q+Math.PI)%(2*Math.PI)+2*Math.PI)%(2*Math.PI)-Math.PI;
   const fmt = (x,n=2) => Number(x).toLocaleString('pt-BR',{minimumFractionDigits:n,maximumFractionDigits:n});
   const ms = x => x >= 1000 ? `${fmt(x/1000)} s` : `${fmt(x,x<1?3:1)} ms`;
   const escape = x => String(x).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-  const textStatus = s => ({'maximum iterations reached':'Limite de iterações','relative cost tolerance':'Tolerância relativa de custo','stationary control update':'Atualização estacionária','line search failed':'Line search falhou','regularization limit reached':'Limite de regularização','final backward pass failed':'Backward pass final falhou'}[s] || s);
+  const textStatus = s => ({'maximum iterations reached':'Limite de iterações','relative cost tolerance':'Tolerância relativa de custo','stationary control update':'Atualização estacionária','stationarity satisfied':'Estacionariedade local satisfeita','stationarity tolerance not reached':'Tolerância de estacionariedade não atingida','line search failed':'Line search falhou','regularization limit reached':'Limite de regularização','final backward pass failed':'Backward pass final falhou'}[s] || s);
   const seedName = s => ({zero:'Torque zero',lqr:'LQR local',collocation:'Direct collocation',provided:'Warm start (plano deslocado)',clipped_lqr:'Rollout LQR com clipping',paired_initial_guess:'Initial guess pareado'}[s] || s);
   const technicalText = text => text.replaceAll('semente local', 'initial guess local').replaceAll('amortecimento numérico', 'damping numérico');
   const notes = {
@@ -43,7 +43,7 @@
   });
   function renderPanels(){
     const family=$('comparison-mode').value;
-    modes=family==='focus'?['infinite','mpc']:family==='all'?['finite','infinite','ilqr','mpc']:['mpc_lqr','mpc_sqp',...((data.solver_comparison?.show_slsqp||$('include-slsqp').checked)?['mpc_slsqp']:[]),'mpc'];
+    modes=family==='focus'?['infinite','mpc']:family==='all'?['finite','infinite','ilqr','mpc']:family==='solvers'?['mpc','mpc_nonlinear_sqp','mpc_nonlinear_slsqp']:['mpc_lqr','mpc_sqp',...((data.solver_comparison?.show_slsqp||$('include-slsqp').checked)?['mpc_slsqp']:[]),'mpc'];
     active=new Set(modes);
     $('robots').setAttribute('data-count',String(modes.length));
     $('legend').innerHTML=modes.map(m=>`<label style="--color:${colors[m]}"><input type="checkbox" data-mode="${m}" checked><i></i>${names[m]}</label>`).join('');
@@ -51,15 +51,16 @@
     const optimizers=modes.filter(m=>m==='ilqr'||m.startsWith('mpc'));
     $('solver-select').innerHTML=optimizers.map(m=>`<option value="${m}">${names[m]}</option>`).join('');
     $('solver-select').value=optimizers.includes('mpc')?'mpc':optimizers[0];
-    $('solver-family-note').hidden=family!=='solvers';
-    $('slsqp-option').hidden=family!=='solvers'||!!data.solver_comparison?.show_slsqp;
+    $('solver-family-note').hidden=!['linear','solvers'].includes(family);
+    $('slsqp-option').hidden=family!=='linear'||!!data.solver_comparison?.show_slsqp;
   }
   $('legend').addEventListener('change',e=>{const m=e.target.dataset.mode;if(!m)return;e.target.checked?active.add(m):active.delete(m);buildCharts();render();});
 
 
   function renderExplanations(){
+    if($('comparison-mode').value==='solvers'){renderNonlinearExplanations();return;}
     const cfg=scenario.config,id=cfg.challenge_id||cfg.id,family=$('comparison-mode').value;
-    const all=family==='all',solvers=family==='solvers',bounded=cfg.limit!==null;
+    const all=family==='all',solvers=family==='linear',bounded=cfg.limit!==null;
     const bound=bounded?`±${fmt(cfg.limit,0)} N·m`:'torque ilimitado';
     const qp=names.mpc_sqp+(modes.includes('mpc_slsqp')?' e '+names.mpc_slsqp:'');
     const nonlinear=all?'iLQR e MPC não linear':'MPC não linear';
@@ -68,7 +69,7 @@
     const comparison={
       focus:'Compare o ganho fixo do LQR infinito com o replanejamento do MPC não linear. Observe estabilização, erro residual e WallTime.',
       all:'Compare os ganhos de LQR finito/infinito, o plano único com feedback do iLQR e o replanejamento do MPC não linear.',
-      solvers:`Compare MPC · LQR/Riccati, ${qp} e MPC não linear. Os métodos lineares compartilham modelo e custo; o MPC não linear usa outro preditor e iLQR.`
+      linear:`Compare MPC · LQR/Riccati, ${qp} e MPC não linear. Os métodos lineares compartilham modelo e custo; o MPC não linear usa outro preditor e iLQR.`
     }[family];
     let guidance='';
     if(['far','nonlinear'].includes(id))guidance=solvers
@@ -98,13 +99,14 @@
       if(['budget','damping'].includes(challenge.id)&&solvers)subtitle='Muda o solver iLQR do MPC não linear; mantém os solvers lineares.';
       button.innerHTML=`${escape(challenge.title)}<span>${escape(subtitle)}</span>`;
     });
-    $('scenario-subtitle').textContent=`${{focus:'LQR infinito × MPC não linear',all:'Quatro controladores',solvers:'Comparação de solvers MPC'}[family]} · ${bound}`;
+    $('scenario-subtitle').textContent=`${{focus:'LQR infinito × MPC não linear',all:'Quatro controladores',linear:'Comparação de solvers MPC'}[family]} · ${bound}`;
     $('scenario-note').innerHTML=`<p>${notes[id]||''} ${guidance}</p><p>${comparison}</p><p>${torqueText}</p>`;
     $('solver-family-note').innerHTML=`<strong>Mesmo horizonte móvel, formulações diferentes.</strong> ${torqueText} ${cfg.mpc_terminal==='Q'?'Aqui o terminal é Q e o horizonte é curto; o ganho Riccati não equivale ao LQR infinito.':'Com terminal P∞, MPC/Riccati coincide matematicamente com o LQR infinito do mesmo modelo; diferenças numéricas podem crescer quando a execução perde estabilidade.'}`;
     $('nominal-option').hidden=!all;
     $('torque-caption').textContent=bounded?`limites tracejados: ${bound}`:'sem limites de torque';
     $('charts-caption').textContent=`${modes.map(m=>names[m]).join(' × ')}. Passe o cursor ou toque nos gráficos para comparar o mesmo instante; use a legenda para filtrar curvas.`;
     $('timing-caption').textContent=`WallTime online mede o cálculo do comando${solvers?(bounded?', incluindo os solves dos QPs e do MPC não linear':'; nos MPCs lineares sem limites, a solução é analítica; o MPC não linear reotimiza'):', incluindo a reotimização no MPC não linear'}. No MPC, a primeira solução é excluída da estatística online. Cada trajetória foi medida uma vez; a carga da máquina afeta os tempos.${solvers?' O benchmark pareado abaixo usa repetições próprias com ±3 N·m.':''}`;
+    if(scenario.runs.mpc.measurement_reused_from)$('timing-caption').textContent+=' O NMPC-iLQR reutiliza um experimento idêntico: '+scenario.runs.mpc.measurement_reused_from+'.';
     $('video-context').textContent=family==='focus'
       ? `O replay e os gráficos comparam LQR infinito × MPC não linear com ${bound}. Este MP4 inclui também LQR finito e iLQR, identificados nos painéis.`
       : `Este MP4 mostra ${modes.map(m=>names[m]).join(', ')} com ${bound}.`;
@@ -124,10 +126,10 @@
       ilqr:['Otimizar um plano único.',`O iLQR combina rollout não linear, backward pass e line search. Calcula um plano de ${fmt(cfg.duration,0)} s com feedback ao redor da trajetória, sem reotimizar após perturbações.`,'uₖ = ūₖ − Kₖ (xₖ − x̄ₖ)',`Initial guess, damping e orçamento influenciam a solução. Aqui há até ${cfg.iterations} iterações; ${bounded?`o plano considera ${bound}`:'o plano não tem restrição de torque'}. Convergência numérica não garante estabilização.`],
       mpc:['Replanejar com a medição.',`O MPC não linear usa iLQR em receding horizon: prevê ${fmt(cfg.mpc_horizon,2)} s, aplica o primeiro comando e desloca o plano como warm start. O terminal é ${terminal}.`,'medir → otimizar → aplicar u₀ → repetir',`Nesta configuração: ${nlBudget}. ${bounded?`A otimização considera ${bound}.`:'A otimização usa torque ilimitado.'} Horizonte curto, mínimos locais e WallTime excessivo continuam possíveis.`],
       mpc_lqr:['MPC linear via Riccati.',`Riccati resolve analiticamente o problema LQ sem restrições, com horizonte ${fmt(cfg.mpc_horizon,2)} s e terminal ${terminal}. As matrizes e ganhos são preparados uma vez.`,'u₀ = −K₀ e',bounded?`O comando é clippado em ${bound} depois do solve. A previsão sem restrições pode pedir mais torque do que o aplicado.`:'Sem clipping, a solução coincide com as curvas lineares SQP/SLSQP desta bancada. Os três usam a solução analítica; zero iterações não significa ausência de controle.'],
-      mpc_sqp:['Resolver o QP com SQP.',bounded?`Este solver usa Hessiana exata e active set para o QP linear com limite ${bound}. Não é um solver SQP de MPC não linear.`:'Nesta opção sem clipping, o problema LQ não exige otimização restrita. A implementação usa diretamente a mesma solução analítica de Riccati.',bounded?'min J linear · sujeito a |uₖ| ≤ limite':'solução LQ analítica · 0 iterações',bounded?'Confira KKT, viabilidade do plano e iterações. Mesmo um ótimo do QP pode controlar mal a planta não linear longe do equilíbrio.':'As diferenças entre solvers restritos devem ser estudadas na opção ±3 N·m. O erro da aproximação linear continua presente.'],
+      mpc_sqp:['Resolver o QP com active set.',bounded?`Este solver usa Hessiana exata e active set para o QP linear com limite ${bound}. Não é um solver SQP de MPC não linear.`:'Nesta opção sem clipping, o problema LQ não exige otimização restrita. A implementação usa diretamente a mesma solução analítica de Riccati.',bounded?'min J linear · sujeito a |uₖ| ≤ limite':'solução LQ analítica · 0 iterações',bounded?'Confira KKT, viabilidade do plano e iterações. Mesmo um ótimo do QP pode controlar mal a planta não linear longe do equilíbrio.':'As diferenças entre solvers restritos devem ser estudadas na opção ±3 N·m. O erro da aproximação linear continua presente.'],
       mpc_slsqp:['Resolver o mesmo QP com SLSQP.',bounded?`SLSQP, da família SQP, usa a implementação SciPy no mesmo QP limitado de MPC · SQP. O horizonte e os custos são iguais.`:'Sem limites de torque, esta implementação também usa a solução LQ analítica, sem executar SLSQP iterativamente.',bounded?'mesmo QP · outra implementação':'solução LQ analítica · 0 iterações',bounded?'A parada do solver pode falhar; violações de torque são reparadas por projeção e o plano é reavaliado. O fallback só é usado se o candidato não for finito ou o reparo piorar o custo. Compare o certificado QP e o status nativo antes de atribuir diferenças de trajetória ao controle.':'O benchmark pareado com ±3 N·m, mostrado em separado, não descreve o WallTime desta solução sem restrições.']
     };
-    $('concept-title').textContent={focus:'Ganho fixo e replanejamento.',all:'O que cada controlador acrescenta.',solvers:'O que muda entre os solvers MPC.'}[family];
+    $('concept-title').textContent={focus:'Ganho fixo e replanejamento.',all:'O que cada controlador acrescenta.',linear:'O que muda entre os solvers MPC.'}[family];
     $('concept-grid').setAttribute('data-count',String(modes.length));
     $('concept-grid').innerHTML=modes.map(m=>{
       const [title,body,formula,limitation]=concepts[m],r=scenario.runs[m],v=r.metrics;
@@ -142,8 +144,67 @@
     else questions.push(['Mais iterações significam convergência mais rápida?',`Em ${nonlinear}, mais iterações podem melhorar o plano e aumentar o WallTime. O desafio 07 muda também a inicialização; não isola o número de iterações. O LQR não usa esse orçamento iterativo online.`],['Como interpretar o damping do solver iLQR?',`É regularização numérica em ${nonlinear}, não atrito físico. No desafio 08, λ = 10⁶ e o initial guess e o orçamento também mudam. Verifique se a redução de custo acompanha estabilização.`]);
     questions.push(['O que observar nos desafios 09 e 10?',all?'Só o custo terminal do LQR finito muda: P∞ em 09 e Q em 10. Compare a reação à perturbação tardia.':'A diferença está no LQR finito, fora desta comparação. Escolha os quatro controladores para visualizar esse efeito; os métodos atuais mantêm a mesma configuração.'],['Esta execução demonstra controle em tempo real?','Consulte os deadline misses de cada método exibido. O período é 50 ms, mas o simulador aguarda o comando. Uma boa trajetória com cálculos acima desse prazo não demonstra execução em tempo real.']);
     $('exploration-notes').innerHTML=questions.map(([question,answer])=>`<details><summary>${question}</summary><p>${answer}</p></details>`).join('');
-    $('method-model').innerHTML=`<h3>Uma planta, ${modes.length} métodos nesta visão</h3><p>${modes.map(m=>names[m]).join(', ')} são executados no Acrobot não linear do Drake. O Simulator usa precisão alvo 10⁻⁹ e torque constante entre amostras de 50 ms.</p><p>${solvers?'Os MPCs lineares usam o modelo Euler do LQR, com terminal '+terminal+'.':all?'Os dois LQRs usam linearização no equilíbrio e Euler.':'O LQR infinito usa linearização no equilíbrio e Euler.'} ${nonlinear} ${all?'usam':'usa'} RK4 com subpassos ≤ 0,01 s e Jacobianos por diferenças finitas. No MPC não linear, o terminal é ${terminal}.${all?' No plano único do iLQR, o terminal é P∞ do modelo RK4 local.':''} A diferença de discretização também afeta a comparação.</p><p>Planta e preditores usam os mesmos parâmetros físicos, sem ruído ou erro de massa. Perturbações são saltos de velocidade. As curvas vêm de execuções pré-calculadas; trocar a seleção não executa Drake no navegador.</p>`;
+    $('method-model').innerHTML=`<h3>Uma planta, ${modes.length} métodos nesta visão</h3><p>${modes.map(m=>names[m]).join(', ')} são executados no Acrobot não linear do Drake. O Simulator usa precisão alvo 10⁻⁹ e torque constante entre amostras de 50 ms.</p><p>${solvers?'Os MPCs lineares usam o modelo Euler do LQR, com terminal '+terminal+'.':all?'Os dois LQRs usam linearização no equilíbrio e Euler.':'O LQR infinito usa linearização no equilíbrio e Euler.'} ${nonlinear} ${all?'usam':'usa'} RK4 com subpassos ≤ 0,01 s e Jacobianos por AutoDiff do Drake da mesma integração RK4. No MPC não linear, o terminal é ${terminal}.${all?' No plano único do iLQR, o terminal é P∞ do modelo RK4 local.':''} A diferença de discretização também afeta a comparação.</p><p>Planta e preditores usam os mesmos parâmetros físicos, sem ruído ou erro de massa. Perturbações são saltos de velocidade. As curvas vêm de execuções pré-calculadas; trocar a seleção não executa Drake no navegador.</p>`;
     $('method-reading').innerHTML=`<h3>Como ler esta comparação</h3><p>${torqueText} Não há restrições de posição ou velocidade.</p><p>${all?`LQR finito e iLQR cobrem ${fmt(cfg.duration,0)} s. `:''}O MPC prevê ${fmt(cfg.mpc_horizon,2)} s e executa ${fmt(cfg.duration,0)} s. MPC não linear: ${nlBudget}.${solvers&&bounded?' SQP/SLSQP: até 300 iterações, certificado QP com tolerância 10⁻⁶, viabilidade física de 10⁻⁸ N·m e ftol 10⁻¹³ no problema normalizado do SLSQP. As iterações não representam o mesmo trabalho computacional.':''}</p><p>Estabilização exige erro de cada junta &lt; 0,05 rad e velocidade de cada junta &lt; 0,1 rad/s por ao menos 1 s até o fim. Falhar nesse teste não prova instabilidade assintótica.</p>`;
+  }
+
+  function renderNonlinearExplanations(){
+    const cfg=scenario.config,id=cfg.challenge_id||cfg.id,bounded=cfg.limit!==null;
+    const bound=bounded?`±${fmt(cfg.limit,0)} N·m`:'torque ilimitado';
+    const terminal=cfg.mpc_terminal==='Q'?'Q':'P∞ (DARE do modelo RK4 local)';
+    const budget=`até ${cfg.iterations} iterações no primeiro solve e ${cfg.mpc_iterations} nos seguintes`;
+    const torqueText=bounded?`Os três métodos incluem ${bound} no planejamento: iLQR trata o limite no backward pass e no rollout; SQP impõe limites no QP e SLSQP usa bounds nos torques. O melhor rollout viável é usado por SQP/SLSQP.`:'Sem clipping nesta execução: nenhum método exibido limita o torque. Os três continuam resolvendo um problema não linear; SQP e SLSQP não são substituídos pela solução LQ analítica.';
+    let guidance='Compare erro angular, velocidades, custo retornado e WallTime. Um solve pode melhorar o custo sem cumprir o critério de estacionariedade ou estabilizar a planta.';
+    if(['far','nonlinear'].includes(id))guidance='O initial guess automático pode usar direct collocation. Os três solvers começam com o mesmo plano e custo terminal. Depois, cada MPC desloca sua própria solução: suas trajetórias e warm starts podem divergir.';
+    if(id==='saturation')guidance=cfg.torque_mode==='original'?'O limite original deste desafio é ±3 N·m, com o mesmo estado distante do desafio 02.':'Com a mesma opção global de torque, os desafios 02 e 03 têm a mesma configuração. Compare as opções ±3 N·m e ilimitado para isolar o limite.';
+    if(id==='disturbance')guidance='Todos os três MPCs reiniciam a previsão no estado medido após a perturbação. O warm start vem do plano anterior, mas a dinâmica e suas derivadas são reavaliadas na nova trajetória.';
+    if(id==='budget')guidance='Todos recebem uma única iteração e initial guess local. Uma iteração de iLQR, de SQP ou de SLSQP não representa o mesmo trabalho: compare também WallTime e avaliações das linearizações.';
+    if(id==='damping')guidance='iLQR e SQP usam λ inicial = 10⁶ em suas respectivas Hessianas; as formas de regularização diferem. O SLSQP do SciPy mantém sua própria aproximação quase-Newton e não recebe esse λ. Os três compartilham o orçamento reduzido e a inicialização local. Este desafio não isola um único parâmetro.';
+    if(['terminal','late'].includes(id))guidance='A diferença entre 09 e 10 está no custo terminal do LQR finito, que não participa desta visão. Os três MPCs mantêm a mesma configuração nos dois desafios.';
+    [...list.children].forEach((button,i)=>{
+      const challenge=challenges[i].config;
+      let subtitle=technicalText(challenge.subtitle);
+      if(challenge.id==='saturation')subtitle=cfg.torque_mode==='original'?'Mesmo estado distante, limite original ±3 N·m.':`Mesmo estado do desafio 02; ${bound}.`;
+      if(['terminal','late'].includes(challenge.id))subtitle='A diferença de Qf aparece na visão com os quatro controladores.';
+      if(challenge.id==='damping')subtitle='Damping em iLQR/SQP; SLSQP mantém sua própria Hessiana.';
+      button.innerHTML=`${escape(challenge.title)}<span>${escape(subtitle)}</span>`;
+    });
+    $('scenario-subtitle').textContent=`MPC não linear · iLQR × SQP × SLSQP · ${bound}`;
+    $('scenario-note').innerHTML=`<p>${notes[id]||''} ${guidance}</p><p>${torqueText}</p>`;
+    $('solver-family-note').innerHTML='<strong>Os três usam a trajetória não linear.</strong> Aₖ e Bₖ são recalculados em cada pedido de derivadas, ao longo do rollout atual, por AutoDiff do Drake. iLQR usa backward pass; SQP resolve QPs com Hessiana Gauss–Newton; SLSQP usa sua própria atualização quase-Newton. A visão “Referência · MPCs lineares” preserva o experimento antigo de modelo fixo.';
+    $('nominal-option').hidden=true;$('solver-benchmark').hidden=true;
+    $('torque-caption').textContent=bounded?`limites tracejados: ${bound}`:'sem limites de torque';
+    $('charts-caption').textContent='As três execuções usam MPC não linear. Passe o cursor nos gráficos para comparar o mesmo instante; posição, velocidade e torque vêm dos estados e comandos registrados no Drake.';
+    $('timing-caption').textContent='WallTime online inclui a reotimização; exclui o primeiro solve. Cada trajetória foi medida uma vez, e a carga da máquina afeta os tempos. Mesmo orçamento de iterações não implica mesmo trabalho computacional. Os estados e warm starts divergem em malha fechada: isto não é um benchmark pareado do mesmo problema em todos os instantes.';
+    if(scenario.runs.mpc.measurement_reused_from)$('timing-caption').textContent+=' Esta configuração repete um experimento idêntico: trajetória e WallTime foram reutilizados da execução '+scenario.runs.mpc.measurement_reused_from+'.';
+    $('video-context').textContent=`Este MP4 mostra NMPC · iLQR, NMPC · SQP e NMPC · SLSQP com ${bound}.`;
+    const params=[['Estado inicial [rad; rad/s]',`[${cfg.x0.map(v=>fmt(v,2)).join('; ')}]`],['R / Q diagonal',`${fmt(cfg.R,1)} / [${cfg.Q.join(', ')}]`],['Limite de torque',bounded?bound:'Sem clipping'],['Horizonte MPC',`${fmt(cfg.mpc_horizon,2)} s`],['Terminal comum',terminal],['Iterações · primeiro / online',`${cfg.iterations} / ${cfg.mpc_iterations}`],['λ inicial · iLQR / SQP',cfg.regularization.toExponential(0)],['SLSQP · ftol normalizado','10⁻⁹'],['Derivadas da dinâmica','RK4 + Drake AutoDiff']];
+    $('parameters').innerHTML=params.map(([label,value])=>`<div class="parameter"><span>${label}</span>${value}</div>`).join('');
+    const concepts={
+      mpc:['iLQR em receding horizon.',`Recalcula Aₖ/Bₖ ao longo da trajetória, faz backward pass e testa passos em rollout com feedback. Aplica u₀ e replaneja no próximo estado medido.`,'rollout → backward pass → line search','Explora a estrutura temporal do controle. O critério de parada usa atualização de controle ou redução de custo; não é o mesmo teste de gradiente projetado dos outros dois.'],
+      mpc_nonlinear_sqp:['SQP com linearização da trajetória.','A cada iteração, recalcula o rollout e Aₖ/Bₖ. Propaga sensibilidades, constrói uma Hessiana Gauss–Newton e resolve um novo QP com Clarabel. Uma line search avalia o custo não linear.','δxₖ₊₁ = Aₖ δxₖ + Bₖ δuₖ','Single shooting elimina os estados pelas equações de movimento. Produtos de sensibilidades de uma dinâmica instável podem ficar mal condicionados; damping e limite de passo ajudam, mas não garantem uma boa solução.'],
+      mpc_nonlinear_slsqp:['SLSQP no problema não linear.','O SciPy recebe o custo de um rollout RK4 e seu gradiente calculado com Aₖ/Bₖ atualizados. Seus subproblemas SQP usam uma aproximação quase-Newton da Hessiana. Os limites de torque entram como bounds.','rollout não linear → gradiente atual → SLSQP','Também usa single shooting e pode sofrer com condicionamento, escala e orçamento curto. Sucesso nativo e estacionariedade do plano retornado são mostrados separadamente. Não há um QP fixo no equilíbrio.']
+    };
+    $('concept-title').textContent='Três solvers para o mesmo MPC não linear.';
+    $('concept-grid').setAttribute('data-count','3');
+    $('concept-grid').innerHTML=modes.map(m=>{
+      const [title,body,formula,limitation]=concepts[m],v=scenario.runs[m].metrics;
+      const outcome=v.settling_s===null?'não estabilizou nos 6 s observados':`estabilizou a partir de ${fmt(v.settling_s)} s`;
+      return `<article><span class="concept-number">${names[m]}</span><h3>${title}</h3><p>${body}</p><div class="formula">${formula}</div><p>${limitation}</p><p><strong>Nesta execução (${bound}):</strong> ${outcome}; pico de torque ${fmt(v.peak_torque)} N·m.</p></article>`;
+    }).join('');
+    $('journey').innerHTML=modes.map((m,i)=>`${i?'<span class="arrow">↔</span>':''}<div><b>${i+1}</b><span>${names[m]}<small>${concepts[m][0]}</small></span></div>`).join('');
+    $('journey').setAttribute('aria-label','Solvers não lineares comparados');
+    const questions=[
+      ['SQP e SLSQP linearizam ao longo da trajetória?','Sim. As derivadas são do mapa não linear F do RK4 nos estados e torques atuais, não do equilíbrio. Em single shooting, as equações da dinâmica eliminam os estados; o gradiente reduzido usa a cadeia dessas linearizações. Abra “Auditar as linearizações deste solve” para ver avaliações, hashes das trajetórias e mudanças de Aₖ.'],
+      ['Por que os resultados ainda podem ser diferentes?','Gauss–Newton, quase-Newton e backward pass produzem atualizações diferentes. Single shooting propaga sensibilidades por todo o horizonte; perto de uma dinâmica instável, o condicionamento pode ser ruim. Inicialização, tolerância, line search e orçamento também importam. Um resultado ruim desta implementação não prova inferioridade de toda a família SQP/SLSQP.'],
+      ['O damping afeta os três da mesma forma?','Não. iLQR regulariza seu backward pass, SQP adiciona λI à Hessiana Gauss–Newton e SLSQP administra sua própria aproximação interna. O SQP limita a variação de cada torque a 10 N·m por iteração sem clipping, ou max(1, 2·limite) com clipping; isso é um limite de passo, não de torque acumulado.'],
+      ['Como comparar convergência?','Observe custo retornado, WallTime e estabilização. O critério de iLQR difere do gradiente projetado usado para auditar SQP/SLSQP. O objetivo destes últimos é normalizado por max(1, custo inicial/N); a tolerância do gradiente projetado é 10⁻⁵. Em um problema mal condicionado, uma diferença de custo muito pequena pode coexistir com gradiente acima da tolerância. Um status nativo de sucesso não é prova de ótimo global.'],
+      ['O que muda nos desafios 09 e 10?','Só o terminal do LQR finito, fora desta visão. Escolha os quatro controladores para investigar essa diferença.'],
+      ['Isto comprova controle em tempo real?','Não. A planta aguarda o solver; os atrasos não entram na física. Compare os deadline misses com o período de 50 ms. A primeira solução inclui a busca do initial guess e pode ser mais lenta.']
+    ];
+    $('exploration-notes').innerHTML=questions.map(([q,a])=>`<details><summary>${q}</summary><p>${a}</p></details>`).join('');
+    $('method-model').innerHTML=`<h3>Mesmo modelo, custo e inicialização</h3><p>Os três executam no Acrobot não linear do Drake, com torque constante entre amostras de 50 ms e precisão alvo 10⁻⁹ do Simulator. Usam o mesmo preditor RK4 com subpassos ≤ 0,01 s, Jacobianos AutoDiff, Q, R, horizonte, terminal ${terminal} e regra de initial guess.</p><p>O primeiro plano inicial é compartilhado matematicamente e verificado nos dados. Depois, cada MPC desloca seu próprio plano. SQP/SLSQP usam single shooting: a dinâmica é satisfeita pelo rollout, não tratada como uma restrição linear fixa. Custos angulares usam erros periódicos, com descontinuidades em ±π.</p><p>São execuções pré-calculadas, sem ruído ou erro de parâmetros. Trocar seleções não executa Drake no navegador.</p>`;
+    $('method-reading').innerHTML=`<h3>Como ler esta comparação</h3><p>${torqueText} Não há restrições de posição ou velocidade.</p><p>Todos preveem ${fmt(cfg.mpc_horizon)} s e executam ${fmt(cfg.duration,0)} s, com ${budget}. Critérios de parada e trabalho por iteração diferem. A estabilidade da planta não decorre de um status do solver.</p><p>Estabilização exige erro de cada junta &lt; 0,05 rad e velocidade &lt; 0,1 rad/s por ao menos 1 s até o fim. O resíduo linear dos gráficos é um diagnóstico de um modelo Euler de referência; não é o erro do preditor RK4 usado pelos três.</p>`;
   }
 
   function stateAt(r,t){
@@ -241,14 +302,17 @@
     const costSeries=[{name:'Iterados do solver',color:colors[m],values:s.costs,x:s.costs.map((_,i)=>i)}];
     if(s.returned_cost!=null)costSeries.push({name:'Plano retornado',color:'#c75132',values:[s.costs.at(-1),returned],x:[s.costs.length-1,s.costs.length],markers:true});
     drawChart('cost',{unit:'custo J (log)',series:costSeries,log:true,maxX:Math.max(1,s.costs.length-(s.returned_cost==null?1:0))},false);
-    const analytical=m==='mpc_lqr'||(m.startsWith('mpc_')&&scenario.config.limit===null);
+    const nonlinear=s.formulation==='nonlinear_shooting';
+    const analytical=m==='mpc_lqr'||(!nonlinear&&m.startsWith('mpc_')&&scenario.config.limit===null);
     $('optimization-caption').textContent=analytical
       ? `${names[m]}: a solução LQ é analítica, sem iterações de otimização. Isso resolve o modelo linear; a execução continua ocorrendo na planta não linear.`
+      : nonlinear ? `${names[m]}: otimização não linear com Aₖ e Bₖ recalculados na trajetória atual. Estacionariedade local não certifica ótimo global nem estabilidade.`
       : m.startsWith('mpc_')
         ? `${names[m]}: confira convergência e viabilidade do QP linear. Mesmo seu ótimo pode resultar em uma trajetória ruim no Acrobot não linear.`
         : `${names[m]}: o solver iLQR pode parar em uma solução local. ${m==='ilqr'?'Este é o plano único calculado antes da execução.':'Selecione um solve para examinar o replanejamento a partir do estado medido.'}`;
     $('cost-caption').textContent=analytical
       ? `Um único valor de custo: solução LQ analítica, sem histórico iterativo.${scenario.config.limit===null?' Não há restrição de torque nesta seleção.':' O plano é calculado sem restrições e o comando recebe clipping depois.'}`
+      : nonlinear ? `Custo do rollout não linear, incluindo terminal. ${m==='mpc_nonlinear_slsqp'?'Iterados SLSQP podem aumentar o custo; o melhor rollout viável avaliado é retornado.':'O histórico registra passos aceitos pela line search; tentativas rejeitadas não contam no eixo.'}`
       : m==='mpc_sqp'
         ? 'Histórico dos iterados do QP linear limitado. As iterações do active set usam Hessiana exata. Consulte o resíduo KKT e a violação de torque do plano retornado.'
         : m==='mpc_slsqp'
@@ -257,11 +321,18 @@
 
     if(s.returned_cost!=null)$('cost-caption').textContent+=' O ponto final laranja é o custo do plano realmente retornado, após eventual reparo/fallback; não é uma iteração adicional. A redução abaixo usa esse custo.';
     const improvement=initialCost>0?(1-returned/initialCost)*100:0;
-    const recoveryName={none:'Sem reparo',box_projection:'Projeção dos torques e novo rollout',initial_guess:'Fallback para o initial guess viável'};
-    const diagnostics=s.returned_cost==null?'':`<dt>Custo inicial</dt><dd>${initialCost.toExponential(5)}</dd><dt>Custo do candidato</dt><dd>${s.candidate_cost==null?'Não finito':s.candidate_cost.toExponential(5)}</dd><dt>Custo do plano retornado</dt><dd>${returned.toExponential(5)}</dd><dt>Tratamento do plano</dt><dd>${recoveryName[s.recovery]||s.recovery}</dd><dt>Status nativo do solver</dt><dd>${escape(s.native_status)}</dd><dt>Sucesso nativo</dt><dd>${s.native_success==null?'Solução analítica':s.native_success?'Sim':'Não; consultar certificado QP'}</dd><dt>Escala das variáveis</dt><dd>${s.variable_scale.toExponential(3)}</dd><dt>Gap dual relativo</dt><dd>${s.relative_dual_gap.toExponential(3)}</dd><dt>Projeção avaliada (máx.)</dt><dd>${s.repair_max_nm.toExponential(3)} N·m</dd>`;
+    const recoveryName={none:'Sem reparo',box_projection:'Projeção dos torques e novo rollout',initial_guess:'Fallback para o initial guess viável',best_nonlinear_rollout:'Melhor rollout não linear viável avaliado'};
+    let diagnostics=s.returned_cost==null?'':`<dt>Custo inicial</dt><dd>${initialCost.toExponential(5)}</dd><dt>Custo do candidato</dt><dd>${s.candidate_cost==null?'Não finito':s.candidate_cost.toExponential(5)}</dd><dt>Custo do plano retornado</dt><dd>${returned.toExponential(5)}</dd><dt>Tratamento do plano</dt><dd>${recoveryName[s.recovery]||s.recovery}</dd><dt>Status nativo do solver</dt><dd>${escape(s.native_status)}</dd><dt>Sucesso nativo</dt><dd>${s.native_success==null?'Solução analítica':s.native_success?'Sim':'Não; consultar certificado QP'}</dd><dt>Escala das variáveis</dt><dd>${s.variable_scale?.toExponential(3)??'—'}</dd><dt>Gap dual relativo</dt><dd>${s.relative_dual_gap?.toExponential(3)??'—'}</dd><dt>Projeção avaliada (máx.)</dt><dd>${s.repair_max_nm?.toExponential(3)??'—'} N·m</dd>`;
+
+    if(nonlinear){
+      const updates=s.linearizations||[],change=Math.max(0,...updates.map(v=>v.max_A_change||0));
+      diagnostics=`<dt>Custo inicial</dt><dd>${initialCost.toExponential(5)}</dd><dt>Custo do candidato final</dt><dd>${s.candidate_cost?.toExponential(5)??'Não finito'}</dd><dt>Custo do plano retornado</dt><dd>${returned.toExponential(5)}</dd><dt>Tratamento do plano</dt><dd>${recoveryName[s.recovery]}</dd><dt>Status nativo do solver</dt><dd>${escape(s.native_status)}</dd><dt>Sucesso nativo</dt><dd>${s.native_success?'Sim':'Não'}</dd><dt>Avaliações das linearizações</dt><dd>${updates.length} (inclui verificação final)</dd><dt>Maior mudança de Aₖ entre avaliações</dt><dd>${change.toExponential(3)}</dd>`;
+    }
 
     const converged=r.solves.filter(s=>s.converged).length;
-    $('solver-detail').innerHTML=`<span class="status ${s.converged?'good':'bad'}">${analytical?'Solução LQ analítica (sem restrições)':s.converged?(s.returned_cost!=null?'Certificado QP satisfeito':'Critério numérico satisfeito'):'Sem convergência declarada'}</span><dl><dt>Parada</dt><dd>${escape(textStatus(s.status))}</dd><dt>Iterações tentadas</dt><dd>${s.iterations}</dd><dt>${s.history_kind==='iterates'?'Iterados registrados':'Atualizações aceitas'}</dt><dd>${s.costs.length-1}</dd><dt>WallTime deste solve</dt><dd>${ms(s.ms)}</dd><dt>Redução do custo retornado</dt><dd>${fmt(Math.abs(improvement)<1e-8?0:improvement)}%</dd>${diagnostics}<dt>Initial guess escolhido</dt><dd>${escape(seedName(s.initialization))}</dd>${s.residual!==null&&s.residual!==undefined?`<dt>Resíduo do certificado QP / KKT</dt><dd>${s.residual.toExponential(2)}</dd>`:''}${s.bound_violation!==null&&s.bound_violation!==undefined?`<dt>Violação prevista de torque</dt><dd>${fmt(s.bound_violation,4)} N·m</dd>`:''}<dt>Solves convergidos / total</dt><dd>${converged} / ${r.solves.length}</dd></dl><p>${r.metrics.settling_s===null?'A execução não cumpriu o critério físico de estabilização nos 6 s observados.':`A execução cumpriu o critério físico a partir de ${fmt(r.metrics.settling_s)} s.`}</p>${r.warnings?.length?`<details><summary>Avisos da inicialização</summary><p>Houve fallback para initial guesses locais. Mensagem original do Drake:</p><pre>${escape(r.warnings.join('\n'))}</pre></details>`:''}`;
+    $('solver-detail').innerHTML=`<span class="status ${s.converged?'good':'bad'}">${analytical?'Solução LQ analítica (sem restrições)':s.converged?(nonlinear?'Estacionariedade local satisfeita':s.returned_cost!=null?'Certificado QP satisfeito':'Critério numérico satisfeito'):'Sem convergência declarada'}</span><dl><dt>Parada</dt><dd>${escape(textStatus(s.status))}</dd><dt>Iterações tentadas</dt><dd>${s.iterations}</dd><dt>${s.history_kind==='iterates'?'Iterados registrados':'Atualizações aceitas'}</dt><dd>${s.costs.length-1}</dd><dt>WallTime deste solve</dt><dd>${ms(s.ms)}</dd><dt>Redução do custo retornado</dt><dd>${fmt(Math.abs(improvement)<1e-8?0:improvement)}%</dd>${diagnostics}<dt>Initial guess escolhido</dt><dd>${escape(seedName(s.initialization))}</dd>${s.residual!==null&&s.residual!==undefined?`<dt>${nonlinear?'Gradiente projetado (objetivo normalizado)':'Resíduo do certificado QP / KKT'}</dt><dd>${s.residual.toExponential(2)}</dd>`:''}${s.bound_violation!==null&&s.bound_violation!==undefined?`<dt>Violação prevista de torque</dt><dd>${fmt(s.bound_violation,4)} N·m</dd>`:''}<dt>Solves convergidos / total</dt><dd>${converged} / ${r.solves.length}</dd></dl><p>${r.metrics.settling_s===null?'A execução não cumpriu o critério físico de estabilização nos 6 s observados.':`A execução cumpriu o critério físico a partir de ${fmt(r.metrics.settling_s)} s.`}</p>${r.warnings?.length?`<details><summary>Avisos da inicialização</summary><p>Houve fallback para initial guesses locais. Mensagem original do Drake:</p><pre>${escape(r.warnings.join('\n'))}</pre></details>`:''}`;
+    if(nonlinear)$('solver-detail').innerHTML+=`<details><summary>Auditar as linearizações deste solve</summary><p>Cada avaliação recalcula Aₖ = ∂F/∂x e Bₖ = ∂F/∂u nos estados e torques do rollout atual. O hash identifica a trajetória; não é um teste de convergência.</p><div class="table-wrap"><table><thead><tr><th>Avaliação</th><th>Trajetória</th><th>máx. |ΔAₖ|</th></tr></thead><tbody>${s.linearizations.map(v=>`<tr><td>${v.evaluation}</td><td>${v.trajectory_hash}</td><td>${v.max_A_change===null?'Inicial':v.max_A_change.toExponential(3)}</td></tr>`).join('')}</tbody></table></div></details>`;
+
   }
   function summary(){
     $('metrics').innerHTML=modes.filter(m=>scenario.runs[m]).map(m=>{const r=scenario.runs[m],v=r.metrics;return `<tr><td style="color:${colors[m]}">${names[m]}</td><td>${ms(v.first_solution_ms)}</td><td>${ms(v.online_median_ms)} / ${ms(v.online_p95_ms)}</td><td class="${v.deadline_misses?'bad':'good'}">${v.deadline_misses} / ${v.online_samples}</td><td>${v.settling_s===null?'Não atingida':fmt(v.settling_s)+' s'}</td><td>${fmt(v.final_angle_rad,4)} rad<span class="metric-note">${fmt(v.final_speed_rad_s,4)} rad/s</span></td><td>${fmt(v.peak_torque)} N·m<span class="metric-note">${r.cfg.limit===null?'Sem clipping':fmt(v.saturation_pct,1)+'% das amostras saturadas'}</span></td></tr>`;}).join('');
@@ -269,7 +340,7 @@
     const mpc=scenario.runs.mpc,ilqr=modes.includes('ilqr')?scenario.runs.ilqr:null;
     const final=runs.map(m=>({m,value:scenario.runs[m].metrics.final_angle_rad})).sort((a,b)=>a.value-b.value);
     const cards=[['Estabilização física',`${successes.length} / ${runs.length}`,successes.length?`${successes.map(m=>names[m]).join(', ')} cumpriram as tolerâncias por pelo menos 1 s até o fim.`:'Nenhum método manteve as tolerâncias por pelo menos 1 s até o fim. Isso descreve esta execução, não uma impossibilidade global.'],['Menor erro angular final',`${fmt(final[0].value,4)} rad`,`${names[final[0].m]} terminou com o menor erro angular máximo. Verifique também a velocidade final; posição sozinha não comprova equilíbrio.`]];
-    if(mpc)cards.push(['WallTime · MPC não linear',ms(mpc.metrics.online_median_ms),`${mpc.metrics.deadline_misses} de ${mpc.metrics.online_samples} reotimizações após o primeiro solve excederam 50 ms. O simulador aguardou cada cálculo.`]);
+    if(mpc)cards.push(['WallTime · NMPC com iLQR',ms(mpc.metrics.online_median_ms),`${mpc.metrics.deadline_misses} de ${mpc.metrics.online_samples} reotimizações após o primeiro solve excederam 50 ms. O simulador aguardou cada cálculo.`]);
     if(ilqr)cards.push(['Otimização do plano único',ilqr.solves[0].converged?'Critério atingido':'Orçamento / parada',`${textStatus(ilqr.solves[0].status)} após ${ilqr.solves[0].iterations} iterações. ${ilqr.metrics.settling_s===null?'O robô não cumpriu o critério físico de estabilização.':'O robô também cumpriu o critério físico.'}`]);
     renderTorqueImpact();
     $('findings').innerHTML=cards.map(c=>`<article class="finding"><h4>${c[0]}</h4><span class="number">${c[1]}</span><p>${c[2]}</p></article>`).join('');
@@ -294,7 +365,7 @@
     [...list.children].forEach((b,j)=>{b.classList.toggle('active',i===j);b.setAttribute('aria-pressed',i===j?'true':'false');});
     const cfg=scenario.config;$('scenario-title').textContent=cfg.title;renderExplanations();
     $('timeline').max=cfg.duration;$('solve-index').value=0;
-    const videoKey=cfg.id+($('comparison-mode').value==='solvers'?'_solvers':'');
+    const videoKey=cfg.id+($('comparison-mode').value==='linear'?'_solvers':$('comparison-mode').value==='solvers'?'_nonlinear_solvers':'');
     const videoURL=window.ACROBOT_MEDIA?.[videoKey]||`videos/${videoKey}.mp4`;
     $('video').src=videoURL;$('download-video').href=videoURL;$('download-video').download=`acrobot-${videoKey}.mp4`;
     $('config-dump').textContent=JSON.stringify({cenario:cfg,parametros_fisicos:Object.values(scenario.runs)[0]?.parameters,metadados:data.metadata},null,2);
@@ -329,7 +400,7 @@
   function frame(now){if(playing){time=Math.min(scenario.config.duration,time+(now-lastFrame)/1000*Number($('speed').value));render();if(time>=scenario.config.duration){playing=false;updatePlay();}}lastFrame=now;requestAnimationFrame(frame);}
   const query=new URLSearchParams(location.search);
   $('torque-mode').value=['original','clipped','unclipped'].includes(query.get('torque'))?query.get('torque'):'clipped';
-  $('comparison-mode').value=['focus','all','solvers'].includes(query.get('comparacao'))?query.get('comparacao'):'focus';
+  $('comparison-mode').value=['focus','all','linear','solvers'].includes(query.get('comparacao'))?query.get('comparacao'):'focus';
   $('include-slsqp').checked=query.get('slsqp')==='1';
   renderSolverComparison();selectScenario(selected);requestAnimationFrame(frame);
 })();

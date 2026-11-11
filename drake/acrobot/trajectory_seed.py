@@ -55,9 +55,11 @@ def collocation_seed(plant, initial_state, target, timestep, horizon,
     value = terminal_cost.copy(); gains = np.empty((horizon, 1, 4)); eps = 1e-5
     for t in range(horizon-1, -1, -1):
         x, u = nominal[t], feedforward[t]
-        A = np.column_stack([(dynamics(x+eps*v, u)-dynamics(x-eps*v, u))/(2*eps)
-                             for v in np.eye(4)])
-        B = ((dynamics(x, u+eps)-dynamics(x, u-eps))/(2*eps)).reshape(4, 1)
+        if hasattr(dynamics,'jacobian'):A,B=dynamics.jacobian(x,u)
+        else:
+            A = np.column_stack([(dynamics(x+eps*v, u)-dynamics(x-eps*v, u))/(2*eps)
+                                 for v in np.eye(4)])
+            B = ((dynamics(x, u+eps)-dynamics(x, u-eps))/(2*eps)).reshape(4, 1)
         gains[t], value = _riccati_step(A, B, Q, R, value)
     controls = np.empty(horizon); x = initial_state.copy()
     for t in range(horizon):

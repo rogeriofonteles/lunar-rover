@@ -2,6 +2,7 @@
 Run in lunar-rover-jazzy-drake from ~/drake. Never uses the mutable YAML.
 """
 import argparse
+import copy
 import hashlib
 import importlib.metadata
 import json
@@ -23,9 +24,10 @@ sys.path.insert(0, str(ROOT.parent.parent))
 from acrobot.lqr import controller_gains, control_torque, wrapped_state_error, _linear_model, _riccati_step
 from acrobot.ilqr import iterative_lqr, RecedingHorizonILQR
 from acrobot.linear_mpc import LinearMPC
+from acrobot.nonlinear_sqp import RecedingHorizonSQP
 
 TARGET = np.array([math.pi, 0., 0., 0.])
-MODES = ['finite', 'infinite', 'ilqr', 'mpc', 'mpc_lqr', 'mpc_sqp', 'mpc_slsqp']
+MODES = ['finite', 'infinite', 'ilqr', 'mpc', 'mpc_lqr', 'mpc_sqp', 'mpc_slsqp', 'mpc_nonlinear_sqp', 'mpc_nonlinear_slsqp']
 VARIANTS = ['original', 'clipped', 'unclipped']
 
 def configurations(variants=VARIANTS):
@@ -57,7 +59,7 @@ SCENARIOS = [
 
 def signature(cfg, mode):
     h = hashlib.sha256(json.dumps([cfg, mode], sort_keys=True).encode())
-    for f in [Path(__file__), ROOT.parent/'lqr.py', ROOT.parent/'ilqr.py', ROOT.parent/'trajectory_seed.py', ROOT.parent/'linear_mpc.py']:
+    for f in [Path(__file__), ROOT.parent/'lqr.py', ROOT.parent/'ilqr.py', ROOT.parent/'trajectory_seed.py', ROOT.parent/'linear_mpc.py', ROOT.parent/'nonlinear_sqp.py']:
         h.update(f.read_bytes())
     return h.hexdigest()
 
@@ -86,7 +88,11 @@ def run(cfg, mode):
                            native_success=getattr(result,'native_success',None), variable_scale=getattr(result,'variable_scale',None),
                            candidate_violation=getattr(result,'candidate_violation',None), repair_max_nm=getattr(result,'repair_max_nm',None),
                            recovery=getattr(result,'recovery',None), relative_dual_gap=getattr(result,'relative_dual_gap',None),
-                           history_kind='iterates' if linear else 'accepted'))
+                           formulation=getattr(result,'formulation','linear_qp' if linear else 'nonlinear_ilqr'),
+                           linearizations=getattr(result,'linearizations',[]),
+                           initial_controls=result.initial_controls.tolist() if k==0 and hasattr(result,'initial_controls') and result.initial_controls is not None else None,
+                           terminal_cost=result.terminal_cost.tolist() if k==0 and hasattr(result,'terminal_cost') else None,
+                           history_kind='iterates' if linear or mode=='mpc_nonlinear_slsqp' else 'accepted'))
     t0 = perf_counter()
     if mode in ('finite', 'infinite'):
         terminal = None
@@ -107,13 +113,13 @@ def run(cfg, mode):
             plan = iterative_lqr(model, cfg['x0'], **options)
         warning_messages.extend(str(w.message) for w in notices)
         record(plan, perf_counter()-t0, 0)
-    elif mode.startswith('mpc_'):
+    elif mode in ('mpc_lqr','mpc_sqp','mpc_slsqp'):
         solver={'mpc_lqr':'riccati','mpc_sqp':'sqp','mpc_slsqp':'slsqp'}[mode]
         linear=LinearMPC(model,timestep=dt,horizon=round(cfg['mpc_horizon']/dt),Q=Q,R=R,torque_limit=bound,solver=solver,terminal_cost=Q if cfg.get('mpc_terminal')=='Q' else None)
     else:
         options['horizon'] = round(cfg['mpc_horizon']/dt)
         if cfg.get('mpc_terminal') == 'Q': options['terminal_cost'] = Q
-        receding = RecedingHorizonILQR(model, **options)
+        receding = RecedingHorizonILQR(model, **options) if mode=='mpc' else RecedingHorizonSQP(model,solver=mode.removeprefix('mpc_nonlinear_'),**options)
     setup_ms = (perf_counter()-t0)*1000
     states=[]; torques=[]; command_ms=[]; predicted=[]
     A,B,_ = _linear_model(model,dt,Q,R,None)
@@ -139,7 +145,7 @@ def run(cfg, mode):
             record(receding.last_result, elapsed, k)
             receding.solver_options['max_iterations']=cfg['mpc_iterations']
             if k % 10 == 0:
-                predicted.append(dict(step=k, states=receding.last_result.states.tolist()))
+                predicted.append(dict(step=k, states=receding.last_result.states.tolist(),controls=receding.last_result.controls.tolist()))
         elif plan:
             u = float(plan.controls[k] - (plan.gains[k] @ wrapped_state_error(x, plan.states[k])).item())
             if bound is not None:u = float(np.clip(u,-bound,bound))
@@ -150,7 +156,7 @@ def run(cfg, mode):
             elapsed=perf_counter()-tic
         torques.append(float(u)); command_ms.append(elapsed*1000)
         port.FixValue(ctx,[u]); sim.AdvanceTo((k+1)*dt)
-        if k % 40 == 0 and mode == 'mpc':
+        if k % 40 == 0 and receding:
             print(f"    MPC {k}/{n} · {solves[-1]['ms']:.0f} ms",flush=True)
     states.append(ctx.get_continuous_state_vector().CopyToVector().tolist())
     xs=np.array(states); us=np.array(torques)
@@ -169,7 +175,7 @@ def run(cfg, mode):
         if cfg['kick'] and k+1==round(cfg['kick']['time']/dt): actual-=cfg['kick']['delta']
         residual.append(float(np.linalg.norm(actual-ep)))
     solve_ms=[s['ms'] for s in solves]
-    online=command_ms[1:] if mode=='mpc' or linear else command_ms
+    online=command_ms[1:] if receding or linear else command_ms
     result=dict(mode=mode, cfg=cfg, warnings=warning_messages, time=(np.arange(n+1)*dt).tolist(), states=states, torque=torques,
                 command_ms=command_ms, solves=solves, predictions=predicted,
                 nominal=plan.states.tolist() if plan else None,
@@ -201,7 +207,7 @@ def export():
     meta=dict(generated_at=datetime.now(timezone.utc).isoformat(), drake=importlib.metadata.version('drake'),
               scipy=importlib.metadata.version('scipy'), python=platform.python_version(), platform=platform.platform(), cpu=platform.processor(),
               threads={k:os.getenv(k) for k in ['OPENBLAS_NUM_THREADS','OMP_NUM_THREADS']},
-              source_hashes={f:hashlib.sha256((ROOT.parent/f).read_bytes()).hexdigest() for f in ['lqr.py','ilqr.py','trajectory_seed.py','linear_mpc.py']})
+              source_hashes={f:hashlib.sha256((ROOT.parent/f).read_bytes()).hexdigest() for f in ['lqr.py','ilqr.py','trajectory_seed.py','linear_mpc.py','nonlinear_sqp.py']})
     data=dict(metadata=meta,scenarios=scenarios)
     comparison=ROOT/'solver_comparison.json'
     if comparison.exists():data['solver_comparison']=json.loads(comparison.read_text())
@@ -213,13 +219,22 @@ def main():
     p=argparse.ArgumentParser(); p.add_argument('--scenarios',nargs='*'); p.add_argument('--modes',nargs='*',default=MODES,choices=MODES); p.add_argument('--variants',nargs='*',default=['original'],choices=VARIANTS); p.add_argument('--force',action='store_true'); p.add_argument('--export-only',action='store_true')
     args=p.parse_args(); (ROOT/'runs').mkdir(exist_ok=True)
     if not args.export_only:
+        measured={}
         for cfg in configurations(args.variants):
             if args.scenarios and cfg['challenge_id'] not in args.scenarios: continue
             for mode in args.modes:
                 path=ROOT/'runs'/f"{cfg['id']}_{mode}.json"; digest=signature(cfg,mode)
                 if path.exists() and not args.force and json.loads(path.read_text()).get('signature')==digest: continue
                 print(f"RUN {cfg['id']} / {mode}",flush=True)
-                result=run(cfg,mode); result['signature']=digest
+                physical={k:v for k,v in cfg.items() if k not in ['id','title','subtitle','challenge_id','torque_mode']}
+                if mode not in ('finite','infinite'):physical.pop('terminal',None)
+                key=json.dumps([physical,mode],sort_keys=True)
+                if key in measured:
+                    result=copy.deepcopy(measured[key]);result['measurement_reused_from']=result['cfg']['id'];result['cfg']=cfg
+                    print('    Identical experiment; reuse recorded trajectory and timing from '+result['measurement_reused_from'],flush=True)
+                else:
+                    result=run(cfg,mode);measured[key]=result
+                result['signature']=digest
                 path.write_text(json.dumps(result,ensure_ascii=False,allow_nan=False))
                 print(json.dumps(result['metrics']),flush=True)
                 export()

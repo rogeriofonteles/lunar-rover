@@ -24,7 +24,9 @@ class ILQRTests(unittest.TestCase):
         x = np.array([.1, -.1, .2, -.2]); controls = []
         for gain in expected:
             u = (-gain @ x).item(); controls.append(u); x = A @ x + B[:, 0]*u
-        with patch('ilqr.nonlinear_step', return_value=lambda x, u: A @ x + B[:, 0]*u):
+        linear_step = lambda x, u: A @ x + B[:, 0]*u
+        linear_step.jacobian = lambda x, u: (A, B)
+        with patch('ilqr.nonlinear_step', return_value=linear_step):
             result = iterative_lqr(None, [.1, -.1, .2, -.2], horizon=horizon,
                                    equilibrium_state=np.zeros(4), terminal_cost=Q, regularization=1e-9,
                                    tolerance=1e-10)

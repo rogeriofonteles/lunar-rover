@@ -6,6 +6,7 @@ import json
 import math
 from pathlib import Path
 import subprocess
+from concurrent.futures import ProcessPoolExecutor
 
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
@@ -14,7 +15,7 @@ ROOT = Path(__file__).resolve().parent
 W,H,FPS = 1280,720,30
 BG='#132a26'; INK='#e7eee3'; MUTED='#a6bdae'; GRID='#2b4338'
 MODES=['finite','infinite','ilqr','mpc']
-NAMES=['LQR finito','LQR infinito','iLQR · plano único','MPC não linear']
+NAMES=['LQR finito','LQR infinito','iLQR · plano único','NMPC · iLQR']
 COLORS=['#e9b16d','#80bfdd','#c8a3e1','#7dcdb0']
 FONT=Path('/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf')
 BOLD=Path('/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf')
@@ -84,7 +85,7 @@ def frame(s,t,modes=MODES,names=NAMES,colors=COLORS):
 
 
 def main():
-    p=argparse.ArgumentParser();p.add_argument('--scenarios',nargs='*');p.add_argument('--force',action='store_true');p.add_argument('--family',choices=['controllers','solvers','both'],default='both');a=p.parse_args()
+    p=argparse.ArgumentParser();p.add_argument('--scenarios',nargs='*');p.add_argument('--force',action='store_true');p.add_argument('--workers',type=int,default=3);p.add_argument('--family',choices=['controllers','solvers','nonlinear','both'],default='both');a=p.parse_args()
     data=json.loads((ROOT/'data.json').read_text());out=ROOT/'videos';out.mkdir(exist_ok=True)
     jobs=[]
     include=data.get('solver_comparison',{}).get('show_slsqp',False)
@@ -94,24 +95,31 @@ def main():
         if a.family in ('controllers','both'):jobs.append((s,name,MODES,NAMES,COLORS))
         if a.family in ('solvers','both'):
             modes=['mpc_lqr','mpc_sqp']+(['mpc_slsqp'] if include else [])+['mpc']
-            names=['MPC · LQR/Riccati','MPC · SQP']+(['MPC · SLSQP'] if include else [])+['MPC não linear']
+            names=['Linear · Riccati','Linear · active set']+(['Linear · SLSQP'] if include else [])+['NMPC · iLQR']
             colors=[COLORS[1],COLORS[0]]+([COLORS[2]] if include else [])+[COLORS[3]]
             jobs.append((s,name+'_solvers',modes,names,colors))
-    for s,name,modes,names,colors in jobs:
-        target=out/f'{name}.mp4'
-        if any(m not in s['runs'] for m in modes):raise ValueError(f'{name}: missing runs')
-        if target.exists() and not a.force:continue
-        print('Rendering',name,flush=True)
-        proc=subprocess.Popen(['ffmpeg','-hide_banner','-loglevel','error','-y','-f','rawvideo','-pixel_format','rgb24','-video_size',f'{W}x{H}','-framerate',str(FPS),'-i','pipe:0','-an','-c:v','libx264','-threads','2','-preset','fast','-crf','20','-pix_fmt','yuv420p','-movflags','+faststart',str(target)],stdin=subprocess.PIPE)
-        try:
-            count=round(s['config']['duration']*FPS)
-            for k in range(count+1):
-                im=frame(s,k/FPS,modes,names,colors);proc.stdin.write(im.tobytes())
-                if k==count//2:im.save(out/f'{name}-preview.jpg',quality=90)
-            proc.stdin.close()
-            if proc.wait():raise RuntimeError('ffmpeg failed')
-        finally:
-            if proc.poll() is None:proc.kill();proc.wait()
-        print(target,flush=True)
+        if a.family in ('nonlinear','both'):
+            jobs.append((s,name+'_nonlinear_solvers',['mpc','mpc_nonlinear_sqp','mpc_nonlinear_slsqp'],['NMPC · iLQR','NMPC · SQP','NMPC · SLSQP'],[COLORS[3],COLORS[0],COLORS[2]]))
+    with ProcessPoolExecutor(max_workers=max(1,a.workers)) as pool:
+        list(pool.map(render_job,[(job,a.force) for job in jobs]))
+
+
+def render_job(task):
+    (s,name,modes,names,colors),force=task
+    target=ROOT/'videos'/f'{name}.mp4'
+    if any(m not in s['runs'] for m in modes):raise ValueError(f'{name}: missing runs')
+    if target.exists() and not force:return
+    print('Rendering',name,flush=True)
+    proc=subprocess.Popen(['ffmpeg','-hide_banner','-loglevel','error','-y','-f','rawvideo','-pixel_format','rgb24','-video_size',f'{W}x{H}','-framerate',str(FPS),'-i','pipe:0','-an','-c:v','libx264','-threads','2','-preset','fast','-crf','24','-pix_fmt','yuv420p','-movflags','+faststart',str(target)],stdin=subprocess.PIPE)
+    try:
+        count=round(s['config']['duration']*FPS)
+        for k in range(count+1):
+            im=frame(s,k/FPS,modes,names,colors);proc.stdin.write(im.tobytes())
+            if k==count//2:im.save(ROOT/'videos'/f'{name}-preview.jpg',quality=90)
+        proc.stdin.close()
+        if proc.wait():raise RuntimeError('ffmpeg failed')
+    finally:
+        if proc.poll() is None:proc.kill();proc.wait()
+    print(target,flush=True)
 
 if __name__=='__main__':main()
