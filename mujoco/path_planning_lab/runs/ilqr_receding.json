@@ -77,7 +77,16 @@
       "time_s": 0.0,
       "tip_error_m": 1.2412670766236366e-16,
       "speed_rad_s": 0.0,
-      "reached": true
+      "reached": true,
+      "status": "on_time",
+      "reached_within_window": true,
+      "actual_arrival_time_s": 0.0,
+      "delay_s": 0.0,
+      "arrival_tip_error_m": 1.2412670766236366e-16,
+      "arrival_speed_rad_s": 0.0,
+      "window_end_time_s": 0.0,
+      "observation_end_time_s": 0.0,
+      "reason": null
     },
     {
       "button": "yellow",
@@ -85,7 +94,16 @@
       "time_s": 5.8,
       "tip_error_m": 0.00015653255677318924,
       "speed_rad_s": 0.0020727163464066604,
-      "reached": true
+      "reached": true,
+      "status": "on_time",
+      "reached_within_window": true,
+      "actual_arrival_time_s": 5.8,
+      "delay_s": 0.0,
+      "arrival_tip_error_m": 0.00015653255677318924,
+      "arrival_speed_rad_s": 0.0020727163464066604,
+      "window_end_time_s": 6.4,
+      "observation_end_time_s": 6.4,
+      "reason": null
     },
     {
       "button": "green",
@@ -93,7 +111,16 @@
       "time_s": 11.22,
       "tip_error_m": 1.2499751540478147e-05,
       "speed_rad_s": 0.00033597413287301327,
-      "reached": true
+      "reached": true,
+      "status": "on_time",
+      "reached_within_window": true,
+      "actual_arrival_time_s": 11.22,
+      "delay_s": 0.0,
+      "arrival_tip_error_m": 1.2499751540478147e-05,
+      "arrival_speed_rad_s": 0.00033597413287301327,
+      "window_end_time_s": 11.82,
+      "observation_end_time_s": 11.82,
+      "reason": null
     },
     {
       "button": "red",
@@ -101,7 +128,16 @@
       "time_s": 23.580000000000002,
       "tip_error_m": 0.00014507752985252274,
       "speed_rad_s": 0.0008695128633376473,
-      "reached": true
+      "reached": true,
+      "status": "on_time",
+      "reached_within_window": true,
+      "actual_arrival_time_s": 23.580000000000002,
+      "delay_s": 0.0,
+      "arrival_tip_error_m": 0.00014507752985252274,
+      "arrival_speed_rad_s": 0.0008695128633376473,
+      "window_end_time_s": 24.18,
+      "observation_end_time_s": 24.18,
+      "reason": null
     }
   ],
   "rms_joint_error_rad": 0.00027385066044184007,
@@ -6262,5 +6298,24 @@
     "initial_hold_seconds": 1,
     "final_hold_seconds": 2,
     "duration_seconds": 27.2
+  },
+  "case": "nominal",
+  "experiment": {
+    "key": "nominal",
+    "dwell": 0.6,
+    "label": "01 · Nominal",
+    "speed": 0.65,
+    "acceleration": 1.2,
+    "description": "Referência suave, modelo conhecido e limites de torque folgados.",
+    "focus": "Compare o erro em milímetros com o custo por comando. Curvas sobrepostas são um resultado: a tarefa pode não justificar um controlador mais caro."
+  },
+  "max_tip_error_m": 0.002895270745443047,
+  "saturated_step_percent": 0.0,
+  "arrival_counts": {
+    "on_time": 3,
+    "delayed": 0,
+    "missed": 0,
+    "total": 3,
+    "reached": 3
   }
 }

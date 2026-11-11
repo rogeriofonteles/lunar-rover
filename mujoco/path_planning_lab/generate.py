@@ -16,6 +16,7 @@ from arm.route_cases import CASES,case_settings,make_plant
 from arm.planning import SCENE_PATH,CollisionWorld
 from arm.route_simulation import LABELS,prepare,run_route
 from arm.route_video import render_route_video
+from arm.route_metrics import evaluate_arrivals,arrival_counts
 
 
 def case_directory(key):
@@ -50,6 +51,11 @@ def assemble(key):
         utilization=np.max(np.abs(arrays['controls'])/summary['config']['torque_limit'],axis=1)*100
         summary.update(case=key,experiment=common['experiment'],max_tip_error_m=float(errors.max()/1000),
             saturated_step_percent=float(np.mean(utilization>=99.9)*100))
+        summary['visits']=evaluate_arrivals(common['arrivals'],arrays['times'],arrays['states'],
+            arrays['actual_tip'],common['timestep'],common['dwell_s'],arrays['clearance'])
+        summary['arrival_counts']=arrival_counts(summary['visits'])
+        # Keep downloadable metrics consistent with the page, preserving solver logs.
+        filename.write_text(json.dumps(json_safe(summary),ensure_ascii=False,indent=2,allow_nan=False)+'\n')
         summary.pop('solver_log',None)
         summary.setdefault('recovery_seconds',None)
         # Keep every sample in comparison curves so brief peaks are not hidden.
@@ -83,7 +89,7 @@ def write_catalog():
         folder=case_directory(key)
         if (folder/'data.js').exists():
             prefix='' if key=='nominal' else f'cases/{key}/'
-            catalog[key]=dict(**case_settings(key),data=f'{prefix}data.js?v=2',folder=prefix)
+            catalog[key]=dict(**case_settings(key),data=f'{prefix}data.js?v=3',folder=prefix)
     (ROOT/'cases.js').write_text('window.ROUTE_CASES = '+json.dumps(catalog,ensure_ascii=False,indent=2)+';\n')
 
 

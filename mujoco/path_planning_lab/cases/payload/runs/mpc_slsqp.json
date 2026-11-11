@@ -88,7 +88,16 @@
       "time_s": 0.0,
       "tip_error_m": 1.2412670766236366e-16,
       "speed_rad_s": 0.0,
-      "reached": true
+      "reached": true,
+      "status": "on_time",
+      "reached_within_window": true,
+      "actual_arrival_time_s": 0.0,
+      "delay_s": 0.0,
+      "arrival_tip_error_m": 1.2412670766236366e-16,
+      "arrival_speed_rad_s": 0.0,
+      "window_end_time_s": 0.0,
+      "observation_end_time_s": 0.0,
+      "reason": null
     },
     {
       "button": "yellow",
@@ -96,7 +105,16 @@
       "time_s": 5.8,
       "tip_error_m": 0.10371014518061375,
       "speed_rad_s": 0.009323015186793005,
-      "reached": false
+      "reached": false,
+      "status": "missed",
+      "reached_within_window": false,
+      "actual_arrival_time_s": null,
+      "delay_s": null,
+      "arrival_tip_error_m": null,
+      "arrival_speed_rad_s": null,
+      "window_end_time_s": 6.4,
+      "observation_end_time_s": 6.4,
+      "reason": "criteria_not_met"
     },
     {
       "button": "green",
@@ -104,7 +122,33 @@
       "time_s": 11.22,
       "tip_error_m": 0.14406499347955842,
       "speed_rad_s": 0.0033286258616649473,
-      "reached": false
+      "reached": false,
+      "status": "missed",
+      "reached_within_window": false,
+      "actual_arrival_time_s": null,
+      "delay_s": null,
+      "arrival_tip_error_m": null,
+      "arrival_speed_rad_s": null,
+      "window_end_time_s": 11.82,
+      "observation_end_time_s": 11.82,
+      "reason": "criteria_not_met"
+    },
+    {
+      "button": "red",
+      "index": 1179,
+      "time_s": 23.580000000000002,
+      "tip_error_m": null,
+      "speed_rad_s": null,
+      "reached": false,
+      "status": "missed",
+      "reached_within_window": false,
+      "actual_arrival_time_s": null,
+      "delay_s": null,
+      "arrival_tip_error_m": null,
+      "arrival_speed_rad_s": null,
+      "window_end_time_s": 24.18,
+      "observation_end_time_s": null,
+      "reason": "interrupted_before_arrival"
     }
   ],
   "rms_joint_error_rad": 0.053739374417148655,
@@ -5420,5 +5464,12 @@
     "initial_hold_seconds": 1,
     "final_hold_seconds": 2,
     "duration_seconds": 20.3
+  },
+  "arrival_counts": {
+    "on_time": 0,
+    "delayed": 0,
+    "missed": 3,
+    "total": 3,
+    "reached": 0
   }
 }

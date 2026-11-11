@@ -29,7 +29,9 @@ os valores de um caso na CLI; os valores efetivos ficam no JSON da execução.
 **Leitura da comparação:**
 
 1. Leia o bloco “Onde olhar” e o resumo calculado a partir das execuções.
-2. Veja conclusão da rota e chegadas aos botões antes de comparar médias.
+2. Veja execução completa/interrompida e as chegadas **no prazo, com atraso
+   ou não observadas** antes de comparar médias. Chegar com atraso conta como
+   chegada; terminar a simulação não garante que todos os destinos foram atingidos.
 3. Marque os métodos para sobrepor **erros**, não apenas posições. Selecione
    uma junta e amplie o evento ou a região de maior erro. Passe o ponteiro ou
    toque na curva para ler valores.
@@ -179,8 +181,31 @@ continua sem forças de contato. Os controladores não incluem colisões em
 seus custos/restrições e podem desviar da referência; a checagem é separada.
 
 Uma chegada exige erro da ponta menor que 10 mm e velocidade máxima menor
-que 0,05 rad/s no instante planejado. Isso é independente da convergência do
-solver. As medições de tempo são de uma execução nesta máquina, sem isolamento de
+que 0,05 rad/s na mesma amostra, com folga geométrica não negativa:
+
+- **No prazo:** os critérios são atendidos no instante planejado.
+- **Com atraso:** a primeira amostra que atende aos critérios ocorre depois,
+  até o fim da pausa planejada no botão (0,6 s nestes casos).
+- **Não chegou:** o critério não foi observado nessa janela. O relatório
+  diferencia uma janela encerrada de uma execução interrompida antes ou durante
+  a avaliação. Isso não afirma que o botão seja fisicamente inalcançável.
+
+O fim da pausa está incluído; amostras do trecho seguinte não são usadas.
+A primeira pose é condição inicial e não conta como destino. O atraso tem
+resolução de 20 ms. Trata-se da primeira amostra válida, sem exigir permanência;
+a recuperação de uma perturbação continua exigindo 0,5 s abaixo de 5 mm.
+No caso de torque limitado, os três MPCs e o iLQR móvel chegam ao vermelho
+160 ms atrasados: agora aparecem com **3/3 chegadas, sendo 2 no prazo e 1 com
+atraso**. Os resultados são recalculados dos arquivos NPZ completos, sem novas
+simulações ou alterações nos vídeos e torques registrados.
+
+O JSON mantém `reached` com seu significado original (no prazo). Os campos
+`status`, `reached_within_window`, `actual_arrival_time_s`, `delay_s`, as métricas
+na chegada e `arrival_counts` tornam a distinção explícita, tanto na página
+quanto nos arquivos de métricas para download. `--assemble-only` atualiza esses
+arquivos preservando o log do solver. Novas simulações usam a mesma avaliação.
+
+Chegada e pontualidade são independentes da convergência do solver. As medições de tempo são de uma execução nesta máquina, sem isolamento de
 CPU e com possível concorrência de geração/renderização de outros casos.
 Elas não são um benchmark estatístico e não garantem tempo real; atrasos não são injetados na planta.
 

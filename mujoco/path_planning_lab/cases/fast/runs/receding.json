@@ -87,7 +87,16 @@
       "time_s": 0.0,
       "tip_error_m": 1.2412670766236366e-16,
       "speed_rad_s": 0.0,
-      "reached": true
+      "reached": true,
+      "status": "on_time",
+      "reached_within_window": true,
+      "actual_arrival_time_s": 0.0,
+      "delay_s": 0.0,
+      "arrival_tip_error_m": 1.2412670766236366e-16,
+      "arrival_speed_rad_s": 0.0,
+      "window_end_time_s": 0.0,
+      "observation_end_time_s": 0.0,
+      "reason": null
     },
     {
       "button": "yellow",
@@ -95,7 +104,16 @@
       "time_s": 2.5,
       "tip_error_m": 0.000746776755339333,
       "speed_rad_s": 0.013099440360971432,
-      "reached": true
+      "reached": true,
+      "status": "on_time",
+      "reached_within_window": true,
+      "actual_arrival_time_s": 2.5,
+      "delay_s": 0.0,
+      "arrival_tip_error_m": 0.000746776755339333,
+      "arrival_speed_rad_s": 0.013099440360971432,
+      "window_end_time_s": 3.1,
+      "observation_end_time_s": 3.1,
+      "reason": null
     },
     {
       "button": "green",
@@ -103,7 +121,16 @@
       "time_s": 4.84,
       "tip_error_m": 0.0005239186809386328,
       "speed_rad_s": 0.006396307952957343,
-      "reached": true
+      "reached": true,
+      "status": "on_time",
+      "reached_within_window": true,
+      "actual_arrival_time_s": 4.84,
+      "delay_s": 0.0,
+      "arrival_tip_error_m": 0.0005239186809386328,
+      "arrival_speed_rad_s": 0.006396307952957343,
+      "window_end_time_s": 5.44,
+      "observation_end_time_s": 5.44,
+      "reason": null
     },
     {
       "button": "red",
@@ -111,7 +138,16 @@
       "time_s": 9.9,
       "tip_error_m": 0.0014272469486365882,
       "speed_rad_s": 0.010514750338290836,
-      "reached": true
+      "reached": true,
+      "status": "on_time",
+      "reached_within_window": true,
+      "actual_arrival_time_s": 9.9,
+      "delay_s": 0.0,
+      "arrival_tip_error_m": 0.0014272469486365882,
+      "arrival_speed_rad_s": 0.010514750338290836,
+      "window_end_time_s": 10.5,
+      "observation_end_time_s": 10.5,
+      "reason": null
     }
   ],
   "rms_joint_error_rad": 0.0009663201646463376,
@@ -2867,5 +2903,12 @@
     "initial_hold_seconds": 1,
     "final_hold_seconds": 2,
     "duration_seconds": 13.5
+  },
+  "arrival_counts": {
+    "on_time": 3,
+    "delayed": 0,
+    "missed": 0,
+    "total": 3,
+    "reached": 3
   }
 }

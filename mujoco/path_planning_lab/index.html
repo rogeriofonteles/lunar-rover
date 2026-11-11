@@ -4,8 +4,8 @@
   <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
   <title>MuJoCo · Do caminho ao movimento</title>
   <meta name="description" content="RRT-Connect e acompanhamento de trajetórias com LQR, iLQR e MPC em um braço de seis juntas no MuJoCo. Resultados, gráficos e vídeos em português.">
-  <link rel="stylesheet" href="style.css?v=2">
-  <script defer src="cases.js?v=2"></script><script defer src="data.js?v=2"></script><script defer src="app.js?v=2"></script>
+  <link rel="stylesheet" href="style.css?v=3">
+  <script defer src="cases.js?v=3"></script><script defer src="data.js?v=3"></script><script defer src="app.js?v=3"></script>
 </head>
 <body>
 <header class="topbar"><a class="brand" href="#inicio"><span class="mark">m.</span> MUJOCO <span>/ laboratório de movimento</span></a><nav aria-label="Navegação"><a href="#experimento">Assistir</a><a href="#planejamento">Planejar</a><a href="#medidas">Comparar</a><a href="#metodo">Reproduzir ↗</a></nav></header>
@@ -18,7 +18,7 @@
     <div class="workspace"><aside><label for="method">Método de acompanhamento</label><select id="method"></select><div id="method-description" class="note"></div><dl id="parameters"></dl><p class="caption">A seleção carrega resultados já calculados em Python. O navegador não executa RRT, MuJoCo ou uma nova otimização.</p><a id="download-video" class="button" download>Baixar vídeo MP4 ↓</a><a id="download-run" class="button" download>Baixar dados da execução ↓</a><a id="download-summary" class="button" download>Métricas e log do solver (JSON) ↓</a></aside>
     <div class="video-panel"><p id="no-video" class="note" hidden></p><video id="video" controls preload="metadata" playsinline aria-label="Execução da rota no simulador MuJoCo"></video><div class="video-caption"><span id="video-status">Carregando…</span><label>Reprodução <select id="speed"><option value=".5">0,5×</option><option value="1" selected>1×</option><option value="2">2×</option></select></label></div><p class="caption">Vídeo renderizado na cena industrial do MuJoCo a partir dos estados integrados. Pontos azuis: caminho da ponta de referência. Esfera roxa: obstáculo do planejador. A esfera amarela na ferramenta representa a carga adicional, quando presente. Pulso e interrupções são destacados no vídeo. Um segundo de apresentação e dois segundos finais; o movimento usa tempo simulado.</p><div id="run-status" class="note"></div></div></div>
     <div id="metrics" class="metric-grid"></div>
-    <div class="section-title compact"><h3>Passagens pelos botões</h3><span>Critério: erro da ponta &lt; 10 mm e velocidade máxima &lt; 0,05 rad/s</span></div><div id="visits" class="visits"></div>
+    <div class="section-title compact"><h3>Passagens pelos botões</h3><span>Critério: erro da ponta &lt; 10 mm e velocidade máxima &lt; 0,05 rad/s</span></div><p class="caption arrival-rule">“No prazo” significa atender aos dois limites no instante previsto. “Com atraso” significa atendê-los depois, até o fim da pausa planejada (0,6 s nestes casos). “Não chegou” significa que isso não foi observado nessa janela antes do fim ou da interrupção da execução. Usamos a primeira amostra válida, a cada 20 ms; não é um teste de permanência no botão.</p><div id="visits" class="visits"></div>
   </section>
   <section id="medidas" class="section">
     <p class="eyebrow">COMPARAÇÃO ENTRE MÉTODOS</p><h2>As diferenças,<br>na mesma escala.</h2>
@@ -34,8 +34,8 @@
     <div class="pair-panel"><div><label for="compare-a">Método A</label><select id="compare-a"></select></div><div><label for="compare-b">Método B</label><select id="compare-b"></select></div><p id="pair-reading" aria-live="polite"></p><button id="show-pair" class="button">Sobrepor apenas A e B</button></div>
     <div class="comparison-controls"><h3>Resultados lado a lado</h3><label>Ordenar por <select id="sort"><option value="default">Família do método</option><option value="error">Erro RMS comum</option><option value="time">Tempo por comando</option><option value="saturation">Saturação</option></select></label></div>
     <p id="comparison-window" class="caption"></p>
-    <div class="table-wrap"><table><thead><tr><th>Método</th><th>Rota / destinos</th><th>Erro RMS comum</th><th>Pico de erro¹</th><th>Saturação¹</th><th>Recuperação</th><th>Preparação</th><th>Comando · mediana / p95</th><th>Atrasos &gt; 20 ms</th><th>Sem convergência</th></tr></thead><tbody id="comparison"></tbody></table></div>
-    <p class="caption">¹ Pico e saturação usam o trecho efetivamente executado por cada método. Uma colisão interrompe a execução; curvas não são extrapoladas. Recuperação: erro abaixo de 5 mm por 0,5 s após o pulso. “Não recuperou” significa que esse critério não foi observado antes do fim.</p>
+    <div class="table-wrap"><table><thead><tr><th>Método</th><th>Execução</th><th>Chegadas aos destinos</th><th>Maior atraso de chegada</th><th>Erro RMS comum</th><th>Pico de erro¹</th><th>Saturação¹</th><th>Recuperação</th><th>Preparação</th><th>Comando · mediana / p95</th><th>Comandos &gt; 20 ms</th><th>Sem convergência</th></tr></thead><tbody id="comparison"></tbody></table></div>
+    <p class="caption">Atraso de chegada é medido em tempo simulado; comandos acima de 20 ms medem custo computacional. Chegadas tardias são avaliadas apenas durante a pausa de cada botão, sem usar amostras de trechos posteriores. ¹ Pico e saturação usam o trecho efetivamente executado por cada método. Uma colisão interrompe a execução; curvas não são extrapoladas. Recuperação: erro abaixo de 5 mm por 0,5 s após o pulso. “Não recuperou” significa que esse critério não foi observado antes do fim.</p>
     <p id="shared-preparation" class="caption"></p>
     <p class="caption">Uma execução por método e caso, sem isolamento de CPU; tempos são observações, não um teste estatístico. Os três solvers MPC resolvem o mesmo problema: se convergirem, diferenças grandes de trajetória não são esperadas.</p>
     <details id="details-plots"><summary>Inspecionar posição, velocidade, torque e tempo do método selecionado</summary>

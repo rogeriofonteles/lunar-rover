@@ -7,7 +7,7 @@ import time
 import mujoco
 import numpy as np
 
-from .buttons import button_target
+from .route_metrics import evaluate_arrivals, arrival_counts
 from .planning import CollisionWorld, plan_route, show_planning_obstacles
 from .model import ArmModel
 from .simulate import load_config
@@ -85,16 +85,7 @@ def run_route(config,arm,route,nominal,headless=True,wait=False,output=None):
         for idx in np.flatnonzero(times>=end-1e-10):
             if idx+window<=len(times) and np.all(tip_error[idx:idx+window]<.005):
                 recovery=float(max(0,times[idx]-end));break
-    visits=[]
-    for visit in route.arrivals:
-        idx=visit['index']
-        if idx>=len(states):
-            continue
-        position=button_target(visit['button'])['position_m']
-        error=float(np.linalg.norm(actual_tip[idx]-position))
-        visits.append(dict(button=visit['button'],index=idx,time_s=times[idx],tip_error_m=error,
-                           speed_rad_s=float(np.max(np.abs(states[idx,6:]))),
-                           reached=bool(error<.01 and np.max(np.abs(states[idx,6:]))<.05)))
+    visits=evaluate_arrivals(route.arrivals,times,states,actual_tip,arm.dt,experiment['dwell'],clearance)
     key=config['mode'] if config['mode']!='mpc' else 'mpc_'+config['solver']
     summary=dict(key=key,label=LABELS[key],case=experiment['key'],experiment=experiment,
                  mode=config['mode'],solver=config['solver'] if config['mode']=='mpc' else None,
@@ -103,7 +94,7 @@ def run_route(config,arm,route,nominal,headless=True,wait=False,output=None):
                  steps=len(controls),simulated_seconds=float(times[-1]),
                  wall_seconds=time.perf_counter()-start,controller_setup_seconds=controller.setup_seconds,
                  nominal_preparation_seconds=nominal.seconds,planning=route.planning,
-                 initial_state=states[0].tolist(),visits=visits,
+                 initial_state=states[0].tolist(),visits=visits,arrival_counts=arrival_counts(visits),
                  rms_joint_error_rad=float(np.sqrt(np.mean(qerror**2))),
                  max_joint_error_rad=float(np.max(np.abs(qerror))),
                  rms_tip_error_m=float(np.sqrt(np.mean(np.sum((actual_tip-planned_tip)**2,axis=1)))),

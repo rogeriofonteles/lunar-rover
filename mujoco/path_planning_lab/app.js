@@ -21,7 +21,17 @@ const palette={infinite:'#ba4d2c',finite:'#287d59',receding:'#a2740c',ilqr:'#2c7
 const colors={ref:'#2b819e',actual:'#c75132'};
 const label=k=>data.runs[k].summary.label;
 const comp=k=>data.runs[k].comparison;
-const reached=s=>s.visits.slice(1).filter(v=>v.reached).length;
+const counts=s=>s.arrival_counts;
+const reached=s=>counts(s).reached;
+const arrivalText=s=>`${counts(s).on_time} no prazo · ${counts(s).delayed} com atraso · ${counts(s).missed} não chegaram`;
+const delayText=s=>{const delays=s.visits.slice(1).filter(v=>v.status==='delayed').map(v=>v.delay_s);return delays.length?fmt(Math.max(...delays)*1000,0)+' ms':'—';};
+const visitLabels={on_time:'Chegou no prazo',delayed:'Chegou com atraso',missed:'Não chegou'};
+const visitColors={on_time:'good',delayed:'late',missed:'bad'};
+function visitCard(v){
+ const reachedAt=v.reached_within_window;
+ const reason={interrupted_before_arrival:'Execução interrompida antes do horário previsto.',interrupted_during_window:'Execução interrompida durante a janela de chegada.',criteria_not_met:'Critério não observado até o fim da pausa prevista.'}[v.reason]||'';
+ return `<article class="visit"><b>${names[v.button]}</b><span class="arrival-status ${visitColors[v.status]}">${visitLabels[v.status]}</span><p>Previsto: ${fmt(v.time_s)} s<br>Janela até: ${fmt(v.window_end_time_s)} s</p><p>${reachedAt?`Chegada: <strong>${fmt(v.actual_arrival_time_s)} s</strong><br>Atraso: <strong>${fmt(v.delay_s*1000,0)} ms</strong><br>Erro na chegada: ${fmt(v.arrival_tip_error_m*1000,3)} mm<br>Velocidade na chegada: ${fmt(v.arrival_speed_rad_s,4)} rad/s`:reason}</p>${v.tip_error_m==null?'':`<details><summary>No instante previsto</summary><p>Erro: ${fmt(v.tip_error_m*1000,3)} mm<br>Velocidade: ${fmt(v.speed_rad_s,4)} rad/s</p></details>`}</article>`;
+}
 const commonEnd=()=>Math.min(...keys.map(k=>data.runs[k].summary.simulated_seconds));
 const rms=k=>{const c=comp(k),values=c.tip_error_mm.filter((_,i)=>c.times[i]<=commonEnd()+1e-9);return Math.sqrt(values.reduce((a,v)=>a+v*v,0)/values.length);};
 const pulse=()=>data.common.experiment.pulse;
@@ -134,7 +144,8 @@ function draw(){
 
 function findings(){
  const summaries=keys.map(k=>data.runs[k].summary),complete=summaries.filter(s=>s.completed).length;
- const full=summaries.filter(s=>s.completed&&reached(s)===3).length;
+ const full=summaries.filter(s=>reached(s)===counts(s).total).length;
+ const punctual=summaries.filter(s=>counts(s).on_time===counts(s).total).length;
  const [lo,hi]=extrema(keys.map(rms));
  let title,text;
  if(caseKey==='nominal'){
@@ -147,9 +158,9 @@ function findings(){
  }else if(caseKey==='torque'){
   title='Limites ativos mudam o problema.';
   const [a,b]=extrema(summaries.map(s=>s.saturated_step_percent));
-  text=`Os motores atingem o limite em <strong>${fmt(a,1)}% a ${fmt(b,1)}%</strong> dos passos executados. Concluir a rota não significa chegar a cada botão na hora prevista. Compare erro e saturação junto com a coluna de destinos; uma média menor não compensa uma colisão.`;
+  text=`Os motores atingem o limite em <strong>${fmt(a,1)}% a ${fmt(b,1)}%</strong> dos passos executados. Chegar com atraso é diferente de não chegar. O relatório observa também a pausa prevista de 0,6 s em cada botão. Compare erro e saturação junto com a coluna de destinos; uma média menor não compensa uma colisão.`;
   const lqr=data.runs.infinite?.summary,mpc=data.runs.mpc_sqp?.summary;
-  if(lqr&&mpc)text+=` <strong>LQR infinito:</strong> ${lqr.completed?'concluiu':'interrompido em '+fmt(lqr.simulated_seconds)+' s'}, ${reached(lqr)}/3 destinos. <strong>MPC-SQP:</strong> ${mpc.completed?'concluiu':'interrompido em '+fmt(mpc.simulated_seconds)+' s'}, ${reached(mpc)}/3 destinos.`;
+  if(lqr&&mpc)text+=` <strong>LQR infinito:</strong> ${lqr.completed?'concluiu':'interrompido em '+fmt(lqr.simulated_seconds)+' s'}, ${reached(lqr)}/3 destinos (${arrivalText(lqr)}). <strong>MPC-SQP:</strong> ${mpc.completed?'concluiu':'interrompido em '+fmt(mpc.simulated_seconds)+' s'}, ${reached(mpc)}/3 destinos (${arrivalText(mpc)}); maior atraso de chegada: <strong>${delayText(mpc)}</strong>.`;
  }else if(caseKey==='payload'){
   title='Um modelo errado afeta todos.';
   text=`A carga não modelada é de <strong>0,5 kg</strong>. O erro RMS comum fica entre <strong>${fmt(lo,1)} e ${fmt(hi,1)} mm</strong>. Observe o erro persistente e as interrupções. Reotimizar com o modelo nominal não equivale a estimar a carga desconhecida.`;
@@ -160,14 +171,14 @@ function findings(){
  }
  const sorted=[...keys].sort((a,b)=>data.runs[a].summary.command_median_ms-data.runs[b].summary.command_median_ms);
  const fastest=data.runs[sorted[0]].summary,slowest=data.runs[sorted.at(-1)].summary;
- $('case-findings').innerHTML=`<article class="finding"><h3>${title}</h3><p>${text}</p></article><article class="finding"><h3>${complete} / ${keys.length} concluíram a rota.</h3><p><strong>${full} / ${keys.length}</strong> também atenderam ao critério nos três destinos. Custo mediano: <strong>${fmt(fastest.command_median_ms,3)} ms</strong> (${fastest.label}) a <strong>${fmt(slowest.command_median_ms,3)} ms</strong> (${slowest.label}). O orçamento por comando é <strong>20 ms</strong>; o vídeo não mostra a espera pelo cálculo.</p></article>`;
+ $('case-findings').innerHTML=`<article class="finding"><h3>${title}</h3><p>${text}</p></article><article class="finding"><h3>${full} / ${keys.length} chegaram aos três destinos.</h3><p><strong>${punctual}</strong> com todas as chegadas no prazo; <strong>${full-punctual}</strong> com algum atraso. Separadamente, ${complete} / ${keys.length} terminaram a execução sem interrupção. Custo mediano: <strong>${fmt(fastest.command_median_ms,3)} ms</strong> (${fastest.label}) a <strong>${fmt(slowest.command_median_ms,3)} ms</strong> (${slowest.label}). O orçamento por comando é <strong>20 ms</strong>; o vídeo não mostra a espera pelo cálculo.</p></article>`;
 }
 
 function pairReading(){
  const a=$('compare-a').value,b=$('compare-b').value,sa=data.runs[a].summary,sb=data.runs[b].summary;
  if(a===b){$('pair-reading').textContent='Selecione dois métodos diferentes para comparar.';return;}
  const delta=rms(b)-rms(a),ratio=sb.command_median_ms/sa.command_median_ms;
- $('pair-reading').textContent=`B em relação a A: ${Math.abs(delta)<.0005?'erro RMS comum igual na precisão exibida':fmt(Math.abs(delta),3)+' mm '+(delta<0?'menos':'mais')+' de erro RMS comum'}. Custo por comando: ${fmt(ratio,2)}× o de A. Rota: A ${sa.completed?'concluída':'interrompida'}, B ${sb.completed?'concluída':'interrompida'}; destinos A ${reached(sa)}/3, B ${reached(sb)}/3. ${a.startsWith('mpc_')&&b.startsWith('mpc_')?`São solvers do mesmo MPC: trajetórias semelhantes são esperadas. Soluções fora da tolerância numérica: A = ${sa.nonconverged_solves}, B = ${sb.nonconverged_solves}. Compare também tempo e convergência.`:'Esses números descrevem este caso, não uma superioridade geral.'}`;
+ $('pair-reading').textContent=`B em relação a A: ${Math.abs(delta)<.0005?'erro RMS comum igual na precisão exibida':fmt(Math.abs(delta),3)+' mm '+(delta<0?'menos':'mais')+' de erro RMS comum'}. Custo por comando: ${fmt(ratio,2)}× o de A. Execução: A ${sa.completed?'completa':'interrompida'}, B ${sb.completed?'completa':'interrompida'}. Destinos A ${reached(sa)}/3 (${arrivalText(sa)}); B ${reached(sb)}/3 (${arrivalText(sb)}). Maior atraso de chegada: A ${delayText(sa)}, B ${delayText(sb)}. ${a.startsWith('mpc_')&&b.startsWith('mpc_')?`São solvers do mesmo MPC: trajetórias semelhantes são esperadas. Soluções fora da tolerância numérica: A = ${sa.nonconverged_solves}, B = ${sb.nonconverged_solves}. Compare também tempo e convergência.`:'Esses números descrevem este caso, não uma superioridade geral.'}`;
 }
 
 function comparisonTable(){
@@ -177,7 +188,7 @@ function comparisonTable(){
  if(sort==='time')order.sort((a,b)=>data.runs[a].summary.command_median_ms-data.runs[b].summary.command_median_ms);
  if(sort==='saturation')order.sort((a,b)=>data.runs[a].summary.saturated_step_percent-data.runs[b].summary.saturated_step_percent);
  $('comparison-window').textContent=`Erro RMS calculado em 0–${fmt(commonEnd())} s para TODOS os métodos, inclusive os interrompidos. Este intervalo comum evita comparar médias de trechos diferentes. As curvas mostram todo o trecho disponível de cada execução.`;
- $('comparison').innerHTML=order.map(key=>{const s=data.runs[key].summary;return `<tr data-key="${key}" class="${key===selected?'selected':''}"><td><button class="button method-name" data-select="${key}" style="--method-color:${palette[key]}"><i></i>${s.label}</button></td><td><span class="${s.completed?'good':'bad'}">${s.completed?'Concluída':'Interrompida'}</span><small>${reached(s)} / 3 destinos · ${fmt(s.simulated_seconds)} s</small></td><td>${fmt(rms(key),3)} mm</td><td>${fmt(s.max_tip_error_m*1000,2)} mm</td><td>${fmt(s.saturated_step_percent,1)}%</td><td>${pulse()?(s.recovery_seconds==null?'Não recuperou':fmt(s.recovery_seconds)+' s'):'—'}</td><td>${fmt(s.controller_setup_seconds*1000,2)} ms</td><td>${fmt(s.command_median_ms,3)} / ${fmt(s.command_p95_ms,3)} ms</td><td>${s.deadline_misses} / ${s.steps}</td><td>${s.mode==='ilqr'?(s.ilqr_plan.converged?'0 planos':'1 plano'):s.nonconverged_solves}</td></tr>`;}).join('');
+ $('comparison').innerHTML=order.map(key=>{const s=data.runs[key].summary;return `<tr data-key="${key}" class="${key===selected?'selected':''}"><td><button class="button method-name" data-select="${key}" style="--method-color:${palette[key]}"><i></i>${s.label}</button></td><td><span class="${s.completed?'good':'bad'}">${s.completed?'Completa':'Interrompida'}</span><small>${fmt(s.simulated_seconds)} s registrados</small></td><td><strong>${reached(s)} / ${counts(s).total} chegaram</strong><small class="good">${counts(s).on_time} no prazo</small><small class="late">${counts(s).delayed} com atraso</small><small class="${counts(s).missed?'bad':''}">${counts(s).missed} não chegaram</small></td><td>${delayText(s)}</td><td>${fmt(rms(key),3)} mm</td><td>${fmt(s.max_tip_error_m*1000,2)} mm</td><td>${fmt(s.saturated_step_percent,1)}%</td><td>${pulse()?(s.recovery_seconds==null?'Não recuperou':fmt(s.recovery_seconds)+' s'):'—'}</td><td>${fmt(s.controller_setup_seconds*1000,2)} ms</td><td>${fmt(s.command_median_ms,3)} / ${fmt(s.command_p95_ms,3)} ms</td><td>${s.deadline_misses} / ${s.steps}</td><td>${s.mode==='ilqr'?(s.ilqr_plan.converged?'0 planos':'1 plano'):s.nonconverged_solves}</td></tr>`;}).join('');
  document.querySelectorAll('[data-select]').forEach(button=>button.onclick=()=>select(button.dataset.select));
  pairReading();
 }
@@ -195,10 +206,11 @@ function select(key){
  $('download-run').href=assets.run;
  $('download-summary').href=assets.summary||assets.run.replace('.npz','.json');
  $('video').playbackRate=Number($('speed').value);
- $('run-status').textContent=s.termination||`${reached(s)} de 3 destinos alcançados no instante previsto. ${s.nonconverged_solves} soluções online sem atingir a tolerância numérica.${s.ilqr_plan?' Plano iLQR: '+(s.ilqr_plan.converged?'convergente.':'não convergente; aplicado com realimentação.'):' '}`;
- $('run-status').classList.toggle('bad',!s.completed||reached(s)!==3);
- $('metrics').innerHTML=[['Destinos alcançados',`${reached(s)} / 3`,'Critério no instante planejado'],['Erro RMS da ponta',fmt(s.rms_tip_error_m*1000,3)+' mm','Trecho executado deste método'],['Pico de erro da ponta',fmt(s.max_tip_error_m*1000,2)+' mm','Maior desvio do trecho executado'],['Cálculo por comando',fmt(s.command_median_ms,3)+' ms','Mediana; preparação separada']].map(([label,v,note])=>`<div class="metric"><span>${label}</span><strong>${v}</strong><small>${note}</small></div>`).join('');
- $('visits').innerHTML=data.common.arrivals.slice(1).map(a=>{const v=s.visits.find(v=>v.index===a.index);return `<article class="visit"><b>${names[a.button]} <span class="${v?.reached?'good':'bad'}">${v?.reached?'✓':'×'}</span></b><p>${v?`t = ${fmt(v.time_s)} s<br>Erro: ${fmt(v.tip_error_m*1000,3)} mm<br>Velocidade máxima: ${fmt(v.speed_rad_s,4)} rad/s`:'Execução interrompida antes desta passagem.'}</p></article>`;}).join('');
+ $('run-status').textContent=`${s.termination?s.termination+'. ':''}${reached(s)} de ${counts(s).total} destinos alcançados: ${arrivalText(s)}. ${s.nonconverged_solves} soluções online sem atingir a tolerância numérica.${s.ilqr_plan?' Plano iLQR: '+(s.ilqr_plan.converged?'convergente.':'não convergente; aplicado com realimentação.'):' '}`;
+ $('run-status').classList.toggle('bad',!s.completed||counts(s).missed>0);
+ $('run-status').classList.toggle('late',s.completed&&counts(s).missed===0&&counts(s).delayed>0);
+ $('metrics').innerHTML=[['Destinos alcançados',`${reached(s)} / ${counts(s).total}`,`${counts(s).on_time} no prazo · ${counts(s).delayed} com atraso`],['Erro RMS da ponta',fmt(s.rms_tip_error_m*1000,3)+' mm','Trecho executado deste método'],['Pico de erro da ponta',fmt(s.max_tip_error_m*1000,2)+' mm','Maior desvio do trecho executado'],['Cálculo por comando',fmt(s.command_median_ms,3)+' ms','Mediana; preparação separada']].map(([label,v,note])=>`<div class="metric"><span>${label}</span><strong>${v}</strong><small>${note}</small></div>`).join('');
+ $('visits').innerHTML=s.visits.slice(1).map(visitCard).join('');
  $('command').textContent=String.raw`python plan_buttons.py --case ${caseKey} \
   --sequence red yellow green red \
   --mode ${s.mode}${s.mode==='mpc'?' --solver '+s.solver:''} --horizon ${s.horizon} \
