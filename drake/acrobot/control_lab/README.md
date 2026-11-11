@@ -106,6 +106,39 @@ inicialização e orçamento; não são ablações de um único parâmetro.
   instáveis e horizontes longos. iLQR organiza o cálculo com uma recursão temporal.
   Resultados desta implementação não provam superioridade de uma família inteira.
 
+### Como entender o caso 08: damping numérico
+
+É um freio nas alterações que o otimizador propõe ao plano de controles. Uma
+regularização adequada pode tornar o cálculo mais robusto; em excesso, pode
+reduzir tanto os passos que o plano melhora pouco no orçamento disponível.
+Não acrescenta atrito à planta nem implica que o torque aplicado seja pequeno:
+o plano inicial já pode conter torques grandes.
+
+No SQP, o modelo do passo recebe `(λ/2) ||δU||²`. Sem limites e sem line search,
+a solução desse modelo é `δU = −(H + λI)⁻¹ g`. Por exemplo, em um problema escalar
+com `g = −4` e `H = 2`, o passo é 2 para λ = 0 e 0,04 para λ = 98: fica 50 vezes
+menor. É uma ilustração matemática, não um resultado medido da simulação.
+R penaliza o torque planejado; λ regulariza a alteração proposta. O rollout é
+avaliado com o custo original. No iLQR, λ atua na recursão do backward pass.
+
+Compare o caso 08 com o 02, mantendo a mesma opção de torque:
+
+| Ajuste | Caso 02 | Caso 08 |
+| --- | --- | --- |
+| λ inicial de iLQR/SQP não linear | 0,00001 | 1.000.000 |
+| Initial guess do primeiro solve | Automático, com possibilidade de direct collocation | Melhor rollout entre torque zero e LQR local, sem direct collocation |
+| Iterações máximas do MPC, primeiro/seguintes | 80/6 | 12/2 |
+
+Estado inicial (desvio de 1 rad em cada junta), Q, R e horizonte são iguais.
+Como três ajustes mudam juntos, não se pode atribuir uma falha somente a λ.
+O SLSQP não linear recebe a mudança de initial guess e orçamento, **mas não esse
+λ**; mantém sua atualização interna da Hessiana. LQRs e referências MPC lineares
+mantêm a configuração do caso 02. O plano único iLQR também muda de 80 para
+12 iterações. A página explica o efeito apenas nos métodos da visão selecionada.
+
+Veja a redução do custo do plano retornado e também os erros de posição e
+velocidade. Pouca melhoria do plano não é o mesmo que estabilização física.
+
 ### Parada, custo retornado e estabilização
 
 SQP/SLSQP retornam o melhor rollout finito e viável **efetivamente avaliado**,

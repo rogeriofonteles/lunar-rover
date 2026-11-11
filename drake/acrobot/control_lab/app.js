@@ -28,7 +28,7 @@
     short:'<strong>Olhar pouco à frente pode ser insuficiente.</strong> Nos métodos MPC, o horizonte cai para 0,20 s e o custo terminal passa a Q. Ambos mudam juntos; compare com 01, que usa 2 s e terminal DARE.',
     expensive:'<strong>O esforço ficou mil vezes mais caro.</strong> Apenas R muda de 0,1 para 100 em relação ao desafio 01. Observe os picos de torque, o tempo de estabilização e a velocidade residual; R maior não implica automaticamente falha.',
     budget:'<strong>Orçamento mínimo, initial guess local.</strong> Compare com 02 sabendo que orçamento e inicialização mudam juntos.',
-    damping:'<strong>Um passo numérico excessivamente cauteloso.</strong> O damping numérico aumenta; ele não representa atrito físico.',
+    damping:'<strong>Passos pequenos demais para melhorar o plano.</strong> O caso combina damping alto, initial guess local e poucas iterações.',
     terminal:'<strong>Uma perturbação perto do final.</strong> Em t = 5 s, Δω = [+0,4; −0,6] rad/s.',
     late:'<strong>Uma perturbação perto do final.</strong> O salto de velocidade em t = 5 s é o mesmo do desafio 09.'
   };
@@ -57,6 +57,32 @@
   $('legend').addEventListener('change',e=>{const m=e.target.dataset.mode;if(!m)return;e.target.checked?active.add(m):active.delete(m);buildCharts();render();});
 
 
+  function dampingExplanation(cfg){
+    const reference=data.scenarios.find(s=>s.config.challenge_id==='far'&&s.config.torque_mode===cfg.torque_mode).config;
+    const effects={
+      finite:'O LQR finito não usa esse damping nem esse orçamento iterativo. Seu projeto é o mesmo do caso 02, com a mesma opção de torque.',
+      infinite:'O ganho do LQR infinito não muda em relação ao caso 02, com a mesma opção de torque.',
+      ilqr:`O backward pass recebe λ alto. O plano único dispõe de até ${cfg.iterations} iterações e começa com uma estimativa local, sem direct collocation.`,
+      mpc:`O solver iLQR recebe λ alto; dispõe de até ${cfg.iterations} iterações no primeiro solve e ${cfg.mpc_iterations} a cada nova medição.`,
+      mpc_nonlinear_sqp:`O SQP adiciona λI à Hessiana do QP. Também usa a inicialização local e o orçamento ${cfg.iterations}/${cfg.mpc_iterations}.`,
+      mpc_nonlinear_slsqp:`O SLSQP não recebe esse λ. O que muda para ele é a inicialização local e o orçamento ${cfg.iterations}/${cfg.mpc_iterations}; sua Hessiana é atualizada internamente.`,
+      mpc_lqr:'Esta referência linear via Riccati não usa esse λ. Mantém o projeto do caso 02, com a mesma opção de torque.',
+      mpc_sqp:'O active set do QP linear não recebe esse λ nem o orçamento reduzido. Sua configuração é a mesma do caso 02, com a mesma opção de torque.',
+      mpc_slsqp:'O SLSQP do QP linear não recebe esse λ nem o orçamento reduzido. Sua configuração é a mesma do caso 02, com a mesma opção de torque.'
+    };
+    return `<p><strong>O que o caso 08 quer mostrar?</strong> O otimizador pode ter dificuldade para melhorar um plano inicial quando seus passos são muito amortecidos e há poucas iterações disponíveis. O robô começa longe do alvo: erro de 1 rad (aproximadamente 57°) em cada ângulo de junta, como no caso 02.</p>
+      <p><strong>Damping numérico é um “freio” nas alterações do plano.</strong> Em cada iteração, o solver propõe uma mudança nos torques planejados. O parâmetro λ torna mudanças grandes mais custosas no cálculo desse passo. Uma dose adequada pode tornar o cálculo mais robusto; uma dose excessiva pode deixar o plano próximo da estimativa inicial. Isso não adiciona atrito à planta e não garante um torque aplicado pequeno: reduz a disposição do solver para mudar o plano que já possui.</p>
+      <div class="table-wrap"><table><thead><tr><th>O que muda</th><th>Caso 02</th><th>Caso 08</th></tr></thead><tbody>
+      <tr><td>λ inicial do damping numérico</td><td>${fmt(reference.regularization,5)}</td><td>${fmt(cfg.regularization,0)}</td></tr>
+      <tr><td>Initial guess do primeiro solve não linear</td><td>Automático; pode usar direct collocation</td><td>Compara torque zero e LQR local; sem direct collocation</td></tr>
+      <tr><td>Iterações máximas do MPC · primeiro / seguintes</td><td>${reference.iterations} / ${reference.mpc_iterations}</td><td>${cfg.iterations} / ${cfg.mpc_iterations}</td></tr>
+      </tbody></table></div>
+      <p>Use a <strong>mesma opção de torque</strong> ao comparar 02 e 08. Estado inicial, Q, R e horizonte permanecem iguais. Como três ajustes mudam juntos, uma resposta ruim não pode ser atribuída somente a λ.</p>
+      <div class="table-wrap"><table><thead><tr><th>Método nesta visão</th><th>Como o caso 08 o afeta</th></tr></thead><tbody>${modes.map(m=>`<tr><td>${names[m]}</td><td>${effects[m]}</td></tr>`).join('')}</tbody></table></div>
+      <p><strong>O que observar:</strong> selecione cada solver na seção de custo. Veja se o plano retornado melhora pouco em relação ao initial guess e se posição e velocidade continuam longe do alvo. Uma melhoria pequena do plano pode coexistir com uma execução ruim; avalie ambos. ${modes.includes('mpc_nonlinear_slsqp')?'O SLSQP não linear não recebe λ alto; este caso não é um teste idêntico de damping entre os três solvers.':''}</p>
+      <details><summary>Um exemplo numérico: por que λ reduz o passo?</summary><p>No SQP, ignorando limites e line search para simplificar, o passo satisfaz:</p><div class="formula">δU = −(H + λI)⁻¹ g</div><p>g indica a direção de mudança do custo; H descreve sua curvatura. Em um exemplo escalar ilustrativo, com g = −4 e H = 2: sem damping, δu = 2; com λ = 98, δu = 0,04. O passo fica 50 vezes menor. Esses números são didáticos, não torques medidos no Acrobot.</p><p>É equivalente a acrescentar (λ/2)‖δU‖² ao modelo quadrático usado para escolher o passo. R penaliza o torque planejado; λ regulariza a alteração proposta. O custo original continua sendo usado para avaliar o novo rollout. No iLQR, a regularização entra na recursão do backward pass, com uma forma diferente da condensação do SQP.</p></details>`;
+  }
+
   function renderExplanations(){
     if($('comparison-mode').value==='solvers'){renderNonlinearExplanations();return;}
     const cfg=scenario.config,id=cfg.challenge_id||cfg.id,family=$('comparison-mode').value;
@@ -83,7 +109,7 @@
       : solvers?(bounded?'Todos os MPCs recebem o estado perturbado. O Riccati reutiliza a solução analítica; os QPs limitados e o MPC não linear resolvem novamente seus problemas.':'Todos os MPCs recebem o estado perturbado. Os métodos lineares reutilizam a solução LQ analítica; o MPC não linear reotimiza a trajetória.')
       : 'O LQR infinito reage ao estado perturbado com o mesmo ganho; o MPC não linear reotimiza a trajetória a partir da nova medição.';
     if(id==='budget')guidance=`${nonlinear} ${all?'recebem':'recebe'} uma única iteração e initial guess local. ${solvers?(bounded?'O orçamento de SQP/SLSQP continua em até 300 iterações; Riccati é analítico.':'Os métodos lineares continuam usando a solução LQ analítica, sem iterações de otimização restrita.'):all?'O projeto dos dois LQRs não muda.':'O projeto do LQR infinito não muda.'}`;
-    if(id==='damping')guidance=`${nonlinear}: λ inicial = 10⁶ e initial guess local. ${all?`iLQR: até ${cfg.iterations} iterações no plano único. `:''}MPC não linear: ${nlBudget}. ${solvers?'Esses ajustes não alteram Riccati nem os solvers do QP linear.':'Uma redução pequena do custo pode indicar passos muito cautelosos, sem estabilização física.'}`;
+    if(id==='damping')guidance=`${nonlinear}: λ inicial = 10⁶ e initial guess local. ${all?`iLQR: até ${cfg.iterations} iterações no plano único. `:''}MPC não linear: ${nlBudget}. ${solvers?'Esses ajustes não alteram Riccati nem os solvers do QP linear.':'Veja abaixo o que muda em relação ao caso 02 e quais métodos recebem esse ajuste.'}`;
     if(['terminal','late'].includes(id))guidance=all
       ? `O LQR finito usa Qf = ${cfg.terminal==='Pinf'?'P∞ do seu próprio modelo Euler':'Q'}. Compare 09 e 10 para observar essa mudança; os demais métodos mantêm a mesma configuração.`
       : 'Os desafios 09 e 10 diferem apenas no custo terminal do LQR finito, que não participa desta visão. Os métodos exibidos têm a mesma configuração nos dois desafios. Selecione “Mostrar os quatro controladores” para investigar essa diferença.';
@@ -101,6 +127,7 @@
     });
     $('scenario-subtitle').textContent=`${{focus:'LQR infinito × MPC não linear',all:'Quatro controladores',linear:'Comparação de solvers MPC'}[family]} · ${bound}`;
     $('scenario-note').innerHTML=`<p>${notes[id]||''} ${guidance}</p><p>${comparison}</p><p>${torqueText}</p>`;
+    if(id==='damping')$('scenario-note').innerHTML+=dampingExplanation(cfg);
     $('solver-family-note').innerHTML=`<strong>Mesmo horizonte móvel, formulações diferentes.</strong> ${torqueText} ${cfg.mpc_terminal==='Q'?'Aqui o terminal é Q e o horizonte é curto; o ganho Riccati não equivale ao LQR infinito.':'Com terminal P∞, MPC/Riccati coincide matematicamente com o LQR infinito do mesmo modelo; diferenças numéricas podem crescer quando a execução perde estabilidade.'}`;
     $('nominal-option').hidden=!all;
     $('torque-caption').textContent=bounded?`limites tracejados: ${bound}`:'sem limites de torque';
@@ -141,7 +168,7 @@
 
     const questions=[['Se eu mudar R, o robô sempre melhora?',`R penaliza esforço, mas mudar esse peso não garante melhora na planta não linear. ${bounded?'A saturação pode impedir o torque desejado.':'Sem clipping, torques muito grandes podem piorar o movimento.'} Compare 01 e 06 com a mesma opção de torque. ${cfg.torque_mode==='original'?'Os desafios 02 e 03 isolam a mudança de limite.':'Nesta opção global de torque, 02 e 03 têm a mesma configuração; use a tabela ±3 / ilimitado para estudar o limite.'}`]];
     if(solvers)questions.push(['O que os desafios de orçamento e damping mudam aqui?',`Os desafios 07/08 alteram o solver iLQR do MPC não linear. ${bounded?'SQP/SLSQP continuam com até 300 iterações e o mesmo critério KKT.':'Os métodos lineares continuam usando a solução analítica.'} Esses desafios não são testes de reduzir iterações ou aumentar damping nos QPs.`],['Mesmo ótimo do QP significa mesma trajetória real?',`O QP descreve a dinâmica linear aproximada. ${bounded?'Falhas numéricas, tolerâncias e fallback também podem alterar o primeiro torque.':'As três curvas lineares usam a mesma solução analítica nesta opção.'} Use o diagnóstico do solve e o erro de previsão para separar efeitos numéricos do erro do modelo.`]);
-    else questions.push(['Mais iterações significam convergência mais rápida?',`Em ${nonlinear}, mais iterações podem melhorar o plano e aumentar o WallTime. O desafio 07 muda também a inicialização; não isola o número de iterações. O LQR não usa esse orçamento iterativo online.`],['Como interpretar o damping do solver iLQR?',`É regularização numérica em ${nonlinear}, não atrito físico. No desafio 08, λ = 10⁶ e o initial guess e o orçamento também mudam. Verifique se a redução de custo acompanha estabilização.`]);
+    else questions.push(['Mais iterações significam convergência mais rápida?',`Em ${nonlinear}, mais iterações podem melhorar o plano e aumentar o WallTime. O desafio 07 muda também a inicialização; não isola o número de iterações. O LQR não usa esse orçamento iterativo online.`],['Como interpretar o damping do solver iLQR?',`É um freio nas mudanças que o otimizador propõe ao plano de torques: λ maior tende a reduzir esses passos. Não aumenta o atrito do robô. No desafio 08, λ = 10⁶ e o initial guess e o orçamento também mudam. Verifique se a redução de custo acompanha estabilização.`]);
     questions.push(['O que observar nos desafios 09 e 10?',all?'Só o custo terminal do LQR finito muda: P∞ em 09 e Q em 10. Compare a reação à perturbação tardia.':'A diferença está no LQR finito, fora desta comparação. Escolha os quatro controladores para visualizar esse efeito; os métodos atuais mantêm a mesma configuração.'],['Esta execução demonstra controle em tempo real?','Consulte os deadline misses de cada método exibido. O período é 50 ms, mas o simulador aguarda o comando. Uma boa trajetória com cálculos acima desse prazo não demonstra execução em tempo real.']);
     $('exploration-notes').innerHTML=questions.map(([question,answer])=>`<details><summary>${question}</summary><p>${answer}</p></details>`).join('');
     $('method-model').innerHTML=`<h3>Uma planta, ${modes.length} métodos nesta visão</h3><p>${modes.map(m=>names[m]).join(', ')} são executados no Acrobot não linear do Drake. O Simulator usa precisão alvo 10⁻⁹ e torque constante entre amostras de 50 ms.</p><p>${solvers?'Os MPCs lineares usam o modelo Euler do LQR, com terminal '+terminal+'.':all?'Os dois LQRs usam linearização no equilíbrio e Euler.':'O LQR infinito usa linearização no equilíbrio e Euler.'} ${nonlinear} ${all?'usam':'usa'} RK4 com subpassos ≤ 0,01 s e Jacobianos por AutoDiff do Drake da mesma integração RK4. No MPC não linear, o terminal é ${terminal}.${all?' No plano único do iLQR, o terminal é P∞ do modelo RK4 local.':''} A diferença de discretização também afeta a comparação.</p><p>Planta e preditores usam os mesmos parâmetros físicos, sem ruído ou erro de massa. Perturbações são saltos de velocidade. As curvas vêm de execuções pré-calculadas; trocar a seleção não executa Drake no navegador.</p>`;
@@ -171,6 +198,7 @@
     });
     $('scenario-subtitle').textContent=`MPC não linear · iLQR × SQP × SLSQP · ${bound}`;
     $('scenario-note').innerHTML=`<p>${notes[id]||''} ${guidance}</p><p>${torqueText}</p>`;
+    if(id==='damping')$('scenario-note').innerHTML+=dampingExplanation(cfg);
     $('solver-family-note').innerHTML='<strong>Os três usam a trajetória não linear.</strong> Aₖ e Bₖ são recalculados em cada pedido de derivadas, ao longo do rollout atual, por AutoDiff do Drake. iLQR usa backward pass; SQP resolve QPs com Hessiana Gauss–Newton; SLSQP usa sua própria atualização quase-Newton. A visão “Referência · MPCs lineares” preserva o experimento antigo de modelo fixo.';
     $('nominal-option').hidden=true;$('solver-benchmark').hidden=true;
     $('torque-caption').textContent=bounded?`limites tracejados: ${bound}`:'sem limites de torque';
