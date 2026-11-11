@@ -81,6 +81,11 @@ def run(cfg, mode):
                            iterations=result.iterations, status=result.status, initialization=result.initialization,
                            costs=[float(c) for c in result.costs],
                            residual=getattr(result,'residual',None), bound_violation=getattr(result,'bound_violation',None),
+                           initial_cost=getattr(result,'initial_cost',None), candidate_cost=getattr(result,'candidate_cost',None),
+                           returned_cost=getattr(result,'returned_cost',None), native_status=getattr(result,'native_status',None),
+                           native_success=getattr(result,'native_success',None), variable_scale=getattr(result,'variable_scale',None),
+                           candidate_violation=getattr(result,'candidate_violation',None), repair_max_nm=getattr(result,'repair_max_nm',None),
+                           recovery=getattr(result,'recovery',None), relative_dual_gap=getattr(result,'relative_dual_gap',None),
                            history_kind='iterates' if linear else 'accepted'))
     t0 = perf_counter()
     if mode in ('finite', 'infinite'):

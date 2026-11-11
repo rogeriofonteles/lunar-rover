@@ -70,6 +70,23 @@ for(let i=0;i<11;i++){
   }
  }
 }
+// Regression: the optional SLSQP curve remains inspectable when grouped by default.
+el('comparison-mode').value='solvers';el('torque-mode').value='clipped';el('include-slsqp').checked=true;
+el('include-slsqp').onchange();
+assert.equal((el('metrics').innerHTML.match(/<tr>/g)||[]).length,4);
+el('solver-select').value='mpc_slsqp';el('solver-select').onchange();
+assert(el('solver-detail').innerHTML.includes('Custo do plano retornado'));
+assert(el('solver-detail').innerHTML.includes('Status nativo do solver'));
+assert(el('cost-caption').textContent.includes('ponto final laranja'));
+// A rejected low-cost iterate must not be displayed as the returned improvement.
+const fixture=D.scenarios.find(s=>s.config.challenge_id===challenges[10].config.id&&s.config.torque_mode==='clipped').runs.mpc_slsqp.solves[0];
+const saved={...fixture};
+Object.assign(fixture,{costs:[100,10],initial_cost:100,candidate_cost:10,returned_cost:100,recovery:'initial_guess',converged:false,native_status:'synthetic fallback regression',native_success:false});
+el('solve-index').value='0';el('solve-index').oninput();
+assert(el('solver-detail').innerHTML.includes('Redução do custo retornado</dt><dd>0,00%'));
+assert(el('solver-detail').innerHTML.includes('Fallback para o initial guess viável'));
+Object.assign(fixture,saved);
+el('include-slsqp').checked=false;el('include-slsqp').onchange();
 el('comparison-mode').value='all';el('torque-mode').value='original';
 el('scenario-list').children[0].click();el('unit').value='deg';el('unit').onchange();el('angle-mode').value='absolute';el('angle-mode').onchange();assert(el('angle2-title').textContent.includes('absoluta'));
 for(const mode of ['finite','infinite','ilqr','mpc'])el('legend').listeners.change({target:{dataset:{mode},checked:false}});

@@ -1,12 +1,75 @@
 import unittest
 import math
 import numpy as np
+import json
+from pathlib import Path
+from types import SimpleNamespace
+from unittest.mock import patch
 from pydrake.examples import AcrobotPlant
 from acrobot.linear_mpc import LinearMPC
 from acrobot.lqr import infinite_horizon_lqr
 
 
 class LinearMPCTest(unittest.TestCase):
+    def difficult_case(self,challenge='far',step=30):
+        cases=json.loads((Path(__file__).parent/'control_lab/solver_benchmark_cases.json').read_text())['cases']
+        p=next(p for p in cases if p['config']['challenge_id']==challenge and p['step']==step)
+        return np.array(p['initial_state']),np.array(p['initial_guess'])
+
+    def assert_returned_plan_cost(self,c,r):
+        errors=r.states-c.target
+        cost=.5*sum(e@c.Q@e+c.R*u*u for e,u in zip(errors[:-1],r.controls))+.5*errors[-1]@c.Qf@errors[-1]
+        np.testing.assert_allclose(r.returned_cost,cost,rtol=1e-12)
+        np.testing.assert_allclose(errors[1:],errors[:-1]@c.A.T+r.controls[:,None]*c.B[:,0],atol=1e-8)
+
+    def test_difficult_scaled_slsqp_against_clarabel(self):
+        from pydrake.solvers import MathematicalProgram, ClarabelSolver, SolverOptions
+        for challenge,step in [('far',10),('far',30),('terminal',110)]:
+            x,seed=self.difficult_case(challenge,step)
+            c=LinearMPC(AcrobotPlant(),solver='slsqp');r=c.solve(x,initial=seed)
+            from acrobot.lqr import wrapped_state_error
+            error=wrapped_state_error(x,c.target);scale=max(1.,max(abs(seed)))
+            prog=MathematicalProgram();y=prog.NewContinuousVariables(c.N,'y')
+            prog.AddQuadraticCost(np.eye(c.N),np.zeros(c.N),y)
+            h=c.constraints(error);prog.AddLinearConstraint(c.G,np.full(len(h),-np.inf),h/scale,y)
+            solver=ClarabelSolver();opts=SolverOptions()
+            for name in ['tol_gap_abs','tol_gap_rel','tol_feas','reduced_tol_gap_abs','reduced_tol_gap_rel','reduced_tol_feas']:opts.SetOption(solver.id(),name,1e-12)
+            opts.SetOption(solver.id(),'static_regularization_enable',False)
+            opts.SetOption(solver.id(),'max_iter',500)
+            independent=solver.Solve(prog,None,opts)
+            self.assertTrue(independent.is_success())
+            u=c.D@error+c.L@(independent.GetSolution(y)*scale)
+            np.testing.assert_allclose(r.controls,u,atol=1e-5)
+            self.assertTrue(r.converged,(r.residual,r.native_status))
+            self.assertNotEqual(r.recovery,'initial_guess')
+            self.assertLess(r.controls[0],-2.99)
+            self.assert_returned_plan_cost(c,r)
+
+    def test_small_bound_violation_repairs_plan_without_reversing_torque(self):
+        x,seed=self.difficult_case();c=LinearMPC(AcrobotPlant(),solver='slsqp')
+        ref=LinearMPC(AcrobotPlant(),solver='sqp').solve(x,initial=seed)
+        from acrobot.lqr import wrapped_state_error
+        e=wrapped_state_error(x,c.target);u=np.clip(ref.controls,-3,3);u[0]=-3.00005
+        y=c.from_controls(e,u)/max(1.,max(abs(seed)))
+        def proposed(*args,**kwargs):
+            kwargs['callback'](y)
+            return SimpleNamespace(x=y,nit=1,message='test small violation',success=False)
+        with patch('acrobot.linear_mpc.minimize',side_effect=proposed):r=c.solve(x,initial=seed)
+        self.assertEqual(r.recovery,'box_projection');self.assertAlmostEqual(r.controls[0],-3.)
+        self.assertLess(r.returned_cost,r.initial_cost)
+        self.assert_returned_plan_cost(c,r)
+
+    def test_fallback_cost_is_not_discarded_candidate_history(self):
+        x,seed=self.difficult_case();c=LinearMPC(AcrobotPlant(),solver='slsqp')
+        def broken(*args,**kwargs):
+            kwargs['callback'](np.zeros(c.N))
+            return SimpleNamespace(x=np.full(c.N,np.nan),nit=1,message='test nonfinite result',success=False)
+        with patch('acrobot.linear_mpc.minimize',side_effect=broken):r=c.solve(x,initial=seed)
+        self.assertEqual(r.recovery,'initial_guess');self.assertFalse(r.converged)
+        self.assertGreater(r.returned_cost,10*r.costs[-1])
+        np.testing.assert_allclose(r.returned_cost,r.initial_cost,rtol=1e-8)
+        self.assert_returned_plan_cost(c,r)
+
     def test_completion_of_squares_and_dynamics(self):
         c=LinearMPC(AcrobotPlant(),horizon=40)
         e=np.array([-.03,.02,.01,-.01]);v=np.random.default_rng(7).normal(0,.1,c.N)

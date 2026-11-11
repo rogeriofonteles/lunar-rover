@@ -73,7 +73,11 @@ onde as escalas são compartilhadas entre os métodos.
 - MPC/LQR: solução analítica via Riccati, ganho preparado uma vez, seguida de clipping quando habilitado.
 - MPC/SQP e MPC/SLSQP: o mesmo QP convexo linear com limites de torque, até 300 iterações por solve. SQP usa Hessiana exata/active set; SLSQP usa SciPy. Isto não implementa SQP não linear.
 - A parametrização por Riccati completa quadrados e dá Hessiana identidade, evitando condensar potências do modelo instável. A transformação preserva o problema e os limites físicos.
-- Resíduo KKT: máximo entre estacionariedade dividida por max(1, norma infinita da variável transformada) e violação primal das restrições com linhas normalizadas. Tolerância 1e-6 para ambos; SLSQP ftol=1e-11. Viabilidade em N·m também é registrada. O fallback de viabilidade usa tolerância 1e-5 nas linhas normalizadas; essa tolerância é convertida de volta para N·m na validação. O comando aplicado sempre recebe clipping exato quando habilitado.
+- SLSQP resolve o mesmo QP em `y = v / escala`, com `escala = max(1, ||initial_guess||∞)`, objetivo dividido pela escala² e restrições divididas pela escala. Isso preserva a solução; `ftol=1e-13` se aplica ao problema normalizado.
+- Candidatos com violação de torque são projetados no intervalo físico e têm o rollout linear refeito. O melhor plano viável entre o candidato reparado e o initial guess é retornado. Um candidato não finito ou um reparo de custo pior aciona fallback explícito. Pequenas violações não descartam automaticamente todo o plano. Projeção candidata, violação original e fallback ficam nos dados. Ajustes ≤ 1e-8 N·m são tratados como arredondamento: `recovery` indica se a projeção foi aplicada; `repair_max_nm` registra sua magnitude avaliada para o candidato aproveitado.
+- O certificado comum dos QPs verifica estacionariedade relativa, viabilidade primal e gap dual relativo, com tolerância 1e-6; exige também violação física ≤ 1e-8 N·m. Multiplicadores não negativos são ajustados às restrições próximas de ativas (folga < 1e-5 nas linhas normalizadas). A estacionariedade é dividida por `max(1, ||v||∞)`. O gap `0.5 ||v+Gᵀλ||² + λᵀ(h−Gv)` é dividido por `max(1, 0.5 vᵀv)`; folgas negativas de arredondamento são truncadas em zero neste termo, e verificadas separadamente na viabilidade. Esse gap também verifica complementaridade, evitando depender apenas da classificação de restrições ativas.
+- O status nativo do SLSQP é preservado separadamente do certificado do plano retornado. Uma mensagem nativa de parada sem sucesso pode acompanhar uma solução que passa na verificação independente. Isso é informado, não ocultado.
+- `costs` mantém o histórico dos candidatos do solver. `initial_cost`, `candidate_cost` e `returned_cost` distinguem o ponto inicial, o candidato bruto e o plano realmente retornado. O custo retornado é recalculado por rollout. O ponto final laranja no gráfico mostra esse valor após reparo/fallback; a redução percentual usa esse custo, não o candidato descartado. Esse ponto não conta como iteração adicional.
 - Sem limites, os três métodos lineares usam a mesma solução analítica. Com terminal DARE, ela equivale ao LQR infinito do mesmo modelo; diferenças numéricas pequenas podem se amplificar em execuções que perdem estabilidade.
 - Ambos os LQRs e MPC/Riccati têm clipping posterior ao projeto quando habilitado. iLQR/MPC consideram o limite
   escalar no backward pass e no rollout. Não há restrições de posição/velocidade.
@@ -83,8 +87,7 @@ onde as escalas são compartilhadas entre os métodos.
 - A inicialização automática pode usar direct collocation do Drake para desvios
   maiores. Esse custo está incluído na primeira solução, e o resultado registra
   o initial guess selecionado e avisos de fallback.
-- “Convergido” é o critério numérico implementado no solver local. Não é um
-  certificado de ótimo global, de condições KKT exatas ou de estabilidade.
+- No iLQR/MPC não linear, “convergido” é um critério local, sem garantia de ótimo global. Nos QPs convexos, o certificado verifica otimalidade nas tolerâncias descritas; isso não garante estabilidade na planta não linear.
 - Estabilização: cada erro angular periódico < 0,05 rad e cada velocidade
   < 0,1 rad/s, por pelo menos 1 s até o final da janela. O tempo informado é o
   primeiro instante desse trecho final contínuo. A região pode ter sido atingida
@@ -121,7 +124,7 @@ Referências: [LQR](https://underactuated.mit.edu/lqr.html),
 ## HTML independente e verificações
 
 `acrobot_interativo.html` incorpora CSS, JavaScript, dados e os vídeos das duas famílias de comparação para cada opção de torque.
-Esse arquivo (aproximadamente 56 MB nesta geração) pode ser movido sozinho e aberto sem internet. Para hospedagem web, prefira `index.html` com os arquivos da pasta: os vídeos carregam sob demanda. Para reconstruí-lo:
+Esse arquivo (aproximadamente 55 MiB nesta geração) pode ser movido sozinho e aberto sem internet. Para hospedagem web, prefira `index.html` com os arquivos da pasta: os vídeos carregam sob demanda. Para reconstruí-lo:
 
 ```sh
 python3 drake/acrobot/control_lab/build_standalone.py
@@ -129,7 +132,7 @@ python3 drake/acrobot/control_lab/build_standalone.py
 
 Verificações realizadas nesta entrega:
 
-- 25 testes do Acrobot e da formulação MPC linear passaram no contêiner Drake, incluindo comparação com o solver OSQP independente.
+- 28 testes do Acrobot e da formulação MPC linear passaram no contêiner Drake, incluindo referências OSQP/Clarabel, regressão da inversão de torque por fallback e custo do plano realmente retornado.
 - As 231 execuções foram reproduzidas independentemente no Drake a partir dos torques salvos,
   com diferença máxima de estado igual a zero.
 - Validação de limites, custos aceitos, métricas de convergência, prazos e
@@ -162,20 +165,19 @@ python3 drake/acrobot/control_lab/build_standalone.py
 ```
 
 O benchmark usa seis estados de cada um dos onze desafios com ±3 N·m,
-sempre da trajetória SQP registrada: 66 problemas pareados. Cada par usa o mesmo
+da trajetória SQP original: 66 problemas pareados. Os estados, configurações e initial guesses foram congelados em `solver_benchmark_cases.json` antes da correção; não são substituídos pelas novas trajetórias. Cada par usa o mesmo
 estado, modelo, custo, horizonte, limites e initial guess; são sete repetições,
 com aquecimento excluído e ordem alternada. Não se usam estados diferentes de
 duas trajetórias para alegar uma diferença intrínseca entre solvers. Alguns desafios
 diferem apenas em parâmetros dos métodos não lineares e repetem o mesmo QP;
-os 66 pares não são 66 problemas independentes. Falhas de viabilidade acionam
-um retorno explícito ao initial guess viável, registrado no status de cada par.
+os 66 pares não são 66 problemas independentes. Cada par também é comparado ao solver cônico Clarabel do Drake, fora da medição de WallTime. O JSON guarda diferença de todos os torques do plano, erro relativo de custo, reparos, fallbacks, status nativo e certificado QP, além dos hashes das entradas e do controlador.
 
 Os critérios definidos antes da comparação para mostrar SLSQP separadamente são:
-Δu₀ > 0,1 N·m; diferença de convergência em pelo menos 5% dos pares; ou razão de
+Δu₀ > 0,1 N·m; diferença no certificado QP em pelo menos 5% dos pares; ou razão de
 medianas de WallTime ≥ 3 com diferença absoluta ≥ 1 ms. Basta um critério.
 A conclusão e os detalhes estão em `solver_comparison.json`, também incorporado
 no JSON principal. Se os critérios não forem atingidos, a visão principal de
-solvers mostra apenas SQP, Riccati e MPC não linear, mantendo SLSQP nos dados.
+solvers mostra SQP, Riccati e MPC não linear. A curva SLSQP pode ser ativada na opção adicional; os dados e diagnósticos de ambos permanecem disponíveis. O MP4 segue a comparação padrão do benchmark.
 
 As opções “sem clipping” usam `limit: null`, não um limite grande aproximado.
 Torques e velocidades muito grandes podem ocorrer. O replay reconstrói o movimento
@@ -192,9 +194,37 @@ foi 2,75 s. Isso não garante que um desvio menor será sempre mais fácil para
 um solver local. Perto e longe do equilíbrio, vários solves do MPC não linear
 excederam o período de 50 ms; a planta simulada aguardou esses cálculos.
 
-O benchmark pareado manteve SQP e SLSQP separados: 10 de 66 pares divergiram
-no critério de convergência (15,2%). A maior diferença no primeiro torque foi
-6 N·m, em casos de falha numérica do SLSQP com retorno ao initial guess viável.
-As medianas de WallTime foram aproximadamente 2,08 ms (SQP) e 1,18 ms (SLSQP).
-A diferença de tempo sozinha não atingiu o critério definido de relevância.
-Esses valores descrevem esta implementação, configuração e máquina.
+## Correção da comparação SQP/SLSQP
+
+A versão anterior podia descartar um candidato próximo do ótimo por uma pequena
+violação de torque e aplicar um initial guess com torque oposto. No caso auditado,
+um candidato de aproximadamente −3,000048 N·m foi substituído por +3 N·m.
+O gráfico mostrava a melhora do candidato descartado (92,38%), sem representar
+o retorno ao custo inicial. Reproduzir a física não detectava esse erro de
+interpretação. Essa comparação anterior não demonstrava inferioridade do SLSQP.
+
+A revisão normaliza as variáveis, repara a viabilidade, compara o custo dos planos
+viáveis, registra o plano retornado e verifica o QP com um certificado comum e
+uma referência Clarabel independente. Foram recalculadas as 99 execuções dos
+três MPCs lineares; as 132 execuções dos quatro controladores originais não
+mudaram, pois não usam essa implementação.
+
+
+Após a correção, os 66 pares passaram no certificado QP para ambos os métodos,
+sem fallback do SLSQP. A maior diferença no primeiro torque SQP/SLSQP foi
+9,57 × 10⁻⁹ N·m. Contra o Clarabel, a maior diferença entre todos os torques dos
+planos foi 1,63 × 10⁻⁶ N·m e o maior erro relativo de custo foi 8,08 × 10⁻⁸.
+As medianas de WallTime pareadas foram 2,54 ms (SQP) e 1,05 ms (SLSQP).
+Os critérios predefinidos não foram atingidos; a curva SLSQP fica opcional.
+
+Em seis pares, o SLSQP ainda retornou status nativo sem sucesso. Os planos desses
+casos, após pequenos reparos, passaram no certificado comum e concordaram com a
+referência independente. A interface informa os dois resultados separadamente;
+não converte o status nativo em sucesso nem afirma convergência exata.
+
+O Clarabel de referência usa a mesma escala de variáveis, regularização estática
+desabilitada, até 500 iterações e tolerâncias de 1e-12, incluindo as tolerâncias
+reduzidas. Sua solução precisa também respeitar o limite físico dentro de 1e-6
+N·m. Não aceitamos apenas o indicador de sucesso: a configuração padrão pôde
+retornar uma solução de precisão reduzida com violação física significativa
+em um caso mal escalado. A viabilidade é conferida antes de usá-la como referência.

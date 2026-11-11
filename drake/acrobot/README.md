@@ -198,7 +198,7 @@ no navegador: um único arquivo offline com onze desafios e três opções de to
 A visão principal compara LQR infinito com MPC não linear; a visão completa
 acrescenta LQR finito e iLQR. Uma comparação separada mostra MPC com Riccati/LQR
 e QP com SQP; SLSQP aparece separadamente quando o benchmark pareado identifica
-diferença relevante. Todos os resultados são gerados na planta não linear do Drake. A interface distingue estabilização física,
+diferença relevante, com opção de exibi-lo manualmente. Todos os resultados são gerados na planta não linear do Drake. A interface distingue estabilização física,
 convergência do solver e viabilidade do período de controle.
 
 Os experimentos são pré-calculados. Código, dados brutos, procedimentos de
@@ -213,3 +213,9 @@ quando habilitado. `solver="sqp"` usa active set com Hessiana exata para o QP;
 torque. A formulação usa completion of squares por Riccati, com Hessiana identidade,
 para evitar potências instáveis na condensação. Esses modos são usados pelo gerador
 do laboratório; não são novos valores de `--mode` no entry point original.
+
+O SLSQP normaliza também a magnitude das variáveis. Candidatos quase viáveis
+recebem projeção dos torques e novo rollout; o fallback mantém o melhor plano
+viável disponível. O resultado distingue custo inicial, candidato e plano
+retornado, além de status nativo, reparo e certificado QP com gap dual relativo.
+O benchmark usa entradas congeladas e uma referência Clarabel independente.
