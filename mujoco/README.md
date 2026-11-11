@@ -185,6 +185,24 @@ defaults; explicit CLI options override YAML. Unknown YAML keys are rejected.
 12 and 6 numbers. `torque_limit` accepts six bounds or one scalar in YAML;
 `--torque-limit 30` applies a shared magnitude. Bounds are always enforced.
 
+## Planejamento entre botões e relatório em PT-BR
+
+O novo fluxo planeja uma rota com RRT-Connect e acompanha uma referência de
+posição/velocidade, mantendo o estado contínuo entre botões:
+
+```sh
+python plan_buttons.py --sequence red yellow green red --mode mpc --solver sqp --horizon 20
+python plan_buttons.py --mode finite
+python plan_buttons.py --mode ilqr_receding --horizon 20
+python plan_buttons.py --headless --video output/rota.mp4
+```
+
+Abra [`path_planning_lab/index.html`](path_planning_lab/index.html) para ver a
+comparação em PT-BR, os gráficos e os vídeos renderizados na cena do MuJoCo.
+Veja [`path_planning_lab/README.md`](path_planning_lab/README.md) para reproduzir
+os resultados e entender a aproximação geométrica de colisão. A rota começa
+no primeiro botão; o fluxo original `simulate.py --button ...` não muda.
+
 ## Industrial workcell
 
 The orange-and-graphite arm uses custom tapered casting meshes, machined

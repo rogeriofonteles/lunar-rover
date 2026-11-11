@@ -57,7 +57,7 @@ def iterative_lqr(problem, initial_state, initial_controls=None, max_iterations=
     p = problem
     x0 = vector(initial_state, 12, "initial_state")
     if initial_controls is None:
-        seeds = [np.tile(p.u_ref, (p.horizon, 1))]
+        seeds = [p.reference_controls.copy()]
         try:
             seeds.append(p.seed(x0))
         except FloatingPointError:
@@ -80,14 +80,14 @@ def iterative_lqr(problem, initial_state, initial_controls=None, max_iterations=
     converged, status = False, "maximum iterations reached"
 
     def backward(xs, us, reg):
-        Vx = p.Qf @ (xs[-1] - p.target)
+        Vx = p.Qf @ (xs[-1] - p.reference_states[-1])
         Vxx = p.Qf.copy()
         ks = np.empty_like(us)
         Ks = np.empty((p.horizon, 6, 12))
         for t in range(p.horizon - 1, -1, -1):
             A, B = p.model.linearize(xs[t], us[t], discrete=True)
-            qx = p.Q @ (xs[t] - p.target) + A.T @ Vx
-            qu = p.R @ (us[t] - p.u_ref) + B.T @ Vx
+            qx = p.Q @ (xs[t] - p.reference_states[t]) + A.T @ Vx
+            qu = p.R @ (us[t] - p.reference_controls[t]) + B.T @ Vx
             qxx = p.Q + A.T @ Vxx @ A
             quu = p.R + B.T @ Vxx @ B
             qux = B.T @ Vxx @ A

@@ -8,7 +8,7 @@ ENV LANG=C.UTF-8 LC_ALL=C.UTF-8 PATH=/opt/mujoco-env/bin:${PATH} \
     OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1
 RUN apt-get update && apt-get install --no-install-recommends -y \
     ca-certificates fish python3 python3-venv libgl1 libegl1 libglfw3 \
-    libosmesa6 libgl1-mesa-dri xvfb xauth ffmpeg \
+    libosmesa6 libgl1-mesa-dri xvfb xauth ffmpeg fonts-dejavu-core \
     && rm -rf /var/lib/apt/lists/* \
     && python3 -m venv /opt/mujoco-env
 COPY mujoco/requirements.txt /tmp/requirements.txt

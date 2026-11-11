@@ -18,13 +18,15 @@ class ControlProblem:
         self.A, self.B = discretize(Ac, Bc, model.dt, discretization)
         self.K, P = infinite_horizon_lqr(self.A, self.B, self.Q, self.R)
         self.Qf = P if terminal_cost is None else cost_matrix(terminal_cost, 12, "terminal_cost")
+        self.reference_states = np.tile(self.target, (self.horizon+1, 1))
+        self.reference_controls = np.tile(self.u_ref, (self.horizon, 1))
 
     def clip(self, controls):
         return np.clip(controls, -self.model.limit, self.model.limit)
 
     def cost(self, states, controls):
-        e = states - self.target
-        v = controls - self.u_ref
+        e = states - self.reference_states
+        v = controls - self.reference_controls
         result = .5 * (np.einsum("ti,ij,tj->", e[:-1], self.Q, e[:-1])
                        + np.einsum("ti,ij,tj->", v, self.R, v)
                        + e[-1] @ self.Qf @ e[-1])
@@ -46,6 +48,6 @@ class ControlProblem:
         x = vector(initial_state, 12, "initial_state")
         controls = np.empty((self.horizon, 6))
         for k in range(self.horizon):
-            controls[k] = self.clip(self.u_ref - self.K @ (x - self.target))
+            controls[k] = self.clip(self.reference_controls[k] - self.K @ (x - self.reference_states[k]))
             x = self.model.step(x, controls[k])
         return controls

@@ -370,6 +370,13 @@ def main():
         el(button,"site",name=f"button_{color}_target",pos=(0,0,0),
            size=.002,rgba=(0,0,0,0))
 
+    # Route-planning obstacle: hidden during the original regulation demos.
+    with (ROOT.parent / "planning_scene.json").open() as stream:
+        planning_scene = json.load(stream)
+    for obstacle in planning_scene["spheres"]:
+        el(world,"geom",name=obstacle["name"],type="sphere",pos=obstacle["center"],
+           size=(obstacle["radius"],),rgba=(.75,.25,.8,0))
+
     # Explicit original inertias decouple the industrial illustration from physics.
     inertias = [
         (2.7482652533603504,.09,(.014817443880070662,.014817443880070662,.0026434876405759863)),
