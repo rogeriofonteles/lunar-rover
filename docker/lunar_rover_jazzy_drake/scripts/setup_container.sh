@@ -1,14 +1,8 @@
 #!/bin/bash
 
-set -e
+set -euo pipefail
 
-cd ~
-# Create virtual environment
-python3 -m venv env
-# Install pydrake
-env/bin/pip install drake
-
-echo "✅ Setup complete."
+echo "✅ Drake is ready: $(python -c 'import importlib.metadata; print(importlib.metadata.version("drake"))')"
 
 # Install fish ros2 plugin
 if [ -t 1 ]; then

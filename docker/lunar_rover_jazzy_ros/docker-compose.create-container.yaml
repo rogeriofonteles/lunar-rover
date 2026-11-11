@@ -8,16 +8,16 @@ services:
       TERM: xterm-256color
       DISPLAY: $DISPLAY
       QT_X11_NO_MITSHM: 1
-      XDG_RUNTIME_DIR: /tmp/runtime-rogerio
+      XDG_RUNTIME_DIR: /tmp/runtime-${USERNAME}
       __NV_PRIME_RENDER_OFFLOAD: 1
       __GLX_VENDOR_LIBRARY_NAME: nvidia
     volumes:
       - /tmp/.X11-unix:/tmp/.X11-unix
-      - /tmp/runtime-rogerio:/tmp/runtime-rogerio
-      - ~/Projects/lunar-rover/lunar_rover:/home/rogerio/lunar_rover
-      - ~/Projects/lunar-rover/config/dependencies.repos:/dependencies.repos
-      - ~/Projects/lunar-rover/docker/${FOLDER_NAME}/scripts/setup_container.sh:/setup_container.sh
-      - ~/Projects/lunar-rover/docker/scripts/entrypoint.fish:/entrypoint.fish
+      - /tmp/runtime-${USERNAME}:/tmp/runtime-${USERNAME}
+      - ${PROJECT_ROOT}/lunar_rover:/home/${USERNAME}/lunar_rover
+      - ${PROJECT_ROOT}/config/dependencies.repos:/dependencies.repos
+      - ${PROJECT_ROOT}/docker/${FOLDER_NAME}/scripts/setup_container.sh:/setup_container.sh
+      - ${PROJECT_ROOT}/docker/scripts/entrypoint.fish:/entrypoint.fish
     devices:
       - /dev/dri
     group_add:

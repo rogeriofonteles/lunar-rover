@@ -1,0 +1,10 @@
+__pycache__/
+*.so
+*.log
+assets/
+vendor/
+smoke/
+results/*.html
+gantry_results/*.html
+gantry_xz_2m_070m/*.html
+gantry_xy_2m_070m/*.html

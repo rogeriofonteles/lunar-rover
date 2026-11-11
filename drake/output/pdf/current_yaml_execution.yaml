@@ -1,0 +1,11 @@
+# Maximum absolute elbow torque in N m when clipping is enabled.
+torque_limit_nm: 3.0
+mode: infinite  # infinite, finite, or receding
+horizon: 100
+timestep: 0.01  # seconds
+steps: 1000
+clip_torque: true
+headless: false
+wait: true
+# [theta1 (rad), theta2 (rad), theta1dot (rad/s), theta2dot (rad/s)]
+initial_state: [3.1316, 0.01, 0.0, 0.0]

@@ -1,0 +1,43 @@
+{
+  "controller": "Finite-horizon LQR applied in receding-horizon form",
+  "horizon_steps": 100,
+  "control_interval_s": 0.1,
+  "prediction_horizon_s": 10.0,
+  "simulation_duration_s": 10.0,
+  "initial_state": [
+    2.991592653589793,
+    0.15,
+    0.0,
+    0.0
+  ],
+  "target_state": [
+    3.141592653589793,
+    0.0,
+    0.0,
+    0.0
+  ],
+  "final_state": [
+    3.141591598783343,
+    3.017010132950859e-06,
+    1.431314513527141e-06,
+    -4.046141300277877e-06
+  ],
+  "final_error": [
+    -1.054806450184742e-06,
+    3.017010132950859e-06,
+    1.431314513527141e-06,
+    -4.046141300277877e-06
+  ],
+  "peak_abs_elbow_torque_Nm": 23.325750939082866,
+  "Q": [
+    10.0,
+    10.0,
+    1.0,
+    1.0
+  ],
+  "R": 1.0,
+  "terminal_cost": "Q",
+  "prediction_model": "Forward-Euler discretization about upright",
+  "simulation_model": "Nonlinear Drake AcrobotPlant",
+  "torque_constraints": null
+}

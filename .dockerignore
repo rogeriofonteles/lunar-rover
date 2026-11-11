@@ -1,0 +1,14 @@
+.git
+**/.git
+**/.env
+**/.env.*
+.python-libs
+**/__pycache__
+**/*.pyc
+lunar_rover/build
+lunar_rover/install
+lunar_rover/log
+tmp
+output
+drake/output
+mujoco/output

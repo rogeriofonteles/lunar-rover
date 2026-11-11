@@ -1,0 +1,7 @@
+{
+  "x_limits": [-1.0, 1.0],
+  "slide_limits": [0.0, 0.7],
+  "second_axis": "y",
+  "yaw_limits": [-3.141592653589793, 3.141592653589793],
+  "mount_height": 0.6
+}

@@ -1,17 +1,14 @@
-#!/bin/bash
-
-# Usage
-# service_name = [ros, drake]
-# ./start_jazzy_container.sh <service_name> <entrypoint_file>
-
-# Parse the config yaml file into env vars
-yq -r '. | to_entries | .[] | "\(.key)=\(.value)"' ~/Projects/lunar-rover/docker/config/project-config.yaml > .env
-# Source env vars
-source .env
-# Set folder name according to the required service
-CONTAINER_BASE_NAME_DASHED=${CONTAINER_BASE_NAME//_/-}
-
-# Allow docker containers to access your X11 session
-xhost +local:docker
-# Start container (detached)
-docker start $CONTAINER_BASE_NAME_DASHED-$1 && docker exec -it $CONTAINER_BASE_NAME_DASHED-$1 fish $2
+#!/usr/bin/env bash
+# Usage: ./docker/scripts/start_jazzy_container.sh {ros|drake|mujoco} [entrypoint_file]
+set -euo pipefail
+source "$(dirname -- "${BASH_SOURCE[0]}")/common.sh"
+configure_service "${1:-}"
+if [[ -n "${DISPLAY:-}" ]] && command -v xhost >/dev/null; then
+    xhost +si:localuser:"$USERNAME"
+fi
+docker start "$CONTAINER_NAME"
+if [[ -n "${2:-}" ]]; then
+    docker exec -it "$CONTAINER_NAME" fish "$2"
+else
+    docker exec -it "$CONTAINER_NAME" fish
+fi

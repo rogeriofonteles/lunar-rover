@@ -1,0 +1,22 @@
+services:
+  mujoco:
+    image: ${CONTAINER_NAME:-lunar-rover-jazzy-mujoco}:latest
+    container_name: ${CONTAINER_NAME:-lunar-rover-jazzy-mujoco}
+    hostname: lunar-rover-jazzy-mujoco
+    # Retain MIT-SHM support for the optional Mesa fallback.
+    ipc: host
+    runtime: nvidia
+    gpus: all
+    environment:
+      TERM: xterm-256color
+      DISPLAY: ${DISPLAY:-:0}
+      MUJOCO_GL: glfw
+      # The NVIDIA runtime injects driver libraries matching the host kernel driver.
+      NVIDIA_DRIVER_CAPABILITIES: graphics,display,utility,compute
+      __GLX_VENDOR_LIBRARY_NAME: nvidia
+    volumes:
+      - /tmp/.X11-unix:/tmp/.X11-unix:ro
+      - ${PROJECT_ROOT:-../..}/mujoco:/home/${USERNAME:-developer}/mujoco
+    working_dir: /home/${USERNAME:-developer}/mujoco
+    init: true
+    command: ["sleep", "infinity"]

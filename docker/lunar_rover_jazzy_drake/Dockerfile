@@ -1,43 +1,67 @@
-FROM robotlocomotion/drake:noble
+# syntax=docker/dockerfile:1
 
-# Install fish shell and clang-format-19
-RUN apt-get update && apt-get install -y \
-    fish \
-    curl \
-    sudo \
-    nano \
-    python3.12-venv \
-    clang-format-19 && \
-    apt-get clean && rm -rf /var/lib/apt/lists/*
+# Ubuntu 26.04 is the newest LTS supported by Drake's Python wheels.
+FROM ubuntu:26.04
 
-# Build args passed in at build time
-ARG USERNAME=rogerio
+ARG DEBIAN_FRONTEND=noninteractive
+ARG USERNAME=developer
 ARG MY_UID=1000
+ARG MY_GID=${MY_UID}
 
-# Install locales
-RUN apt-get update && apt-get install -y locales && rm -rf /var/lib/apt/lists/* \
-    && localedef -i en_US -c -f UTF-8 -A /usr/share/locale/locale.alias en_US.UTF-8
+ENV LANG=C.UTF-8 \
+    LC_ALL=C.UTF-8 \
+    PATH=/opt/drake-env/bin:${PATH}
 
-ENV LANG=en_US.utf8
+COPY drake/requirements.txt /tmp/drake-requirements.txt
 
-# Rename the UID/GID user to USERNAME
-RUN existing_user=$(getent passwd "$MY_UID" | cut -d: -f1) && \
-    usermod -l $USERNAME -d /home/$USERNAME -m $existing_user && \
-    groupmod -n $USERNAME $existing_user && \
-    usermod -aG sudo $USERNAME && \
-    echo "$USERNAME ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
+RUN apt-get update \
+    && apt-get install --no-install-recommends -y \
+        ca-certificates \
+        clang-format \
+        curl \
+        fish \
+        ffmpeg \
+        g++ \
+        git \
+        libeigen3-dev \
+        libconsole-bridge-dev \
+        libglib2.0-0t64 \
+        libsm6 \
+        libx11-6 \
+        nano \
+        python3 \
+        python3-venv \
+        sudo \
+    && rm -rf /var/lib/apt/lists/* \
+    && python3 -m venv /opt/drake-env \
+    && /opt/drake-env/bin/pip install --no-cache-dir --upgrade pip \
+    && /opt/drake-env/bin/pip install --no-cache-dir -r /tmp/drake-requirements.txt \
+    && python -c "import pydrake; print(f'Drake installed: {pydrake.__file__}')"
 
-# Create group render
-RUN groupadd -f render && usermod -aG render rogerio
+# Match the host user so bind-mounted files retain the correct ownership.
+RUN existing_user="$(getent passwd "${MY_UID}" | cut -d: -f1)" \
+    && if ! getent group "${MY_GID}" >/dev/null; then groupadd -g "${MY_GID}" "${USERNAME}"; fi \
+    && if [ -n "${existing_user}" ]; then \
+         usermod --login "${USERNAME}" --home "/home/${USERNAME}" --move-home "${existing_user}"; \
+       else \
+         useradd --uid "${MY_UID}" --gid "${MY_GID}" --create-home --shell /usr/bin/fish "${USERNAME}"; \
+       fi \
+    && usermod --gid "${MY_GID}" "${USERNAME}" \
+    && usermod --append --groups sudo "${USERNAME}" \
+    && echo "${USERNAME} ALL=(ALL) NOPASSWD:ALL" > "/etc/sudoers.d/${USERNAME}" \
+    && chmod 0440 "/etc/sudoers.d/${USERNAME}" \
+    && groupadd --force render \
+    && usermod --append --groups render,video "${USERNAME}" \
+    && chsh --shell /usr/bin/fish "${USERNAME}"
 
-# Set fish as the default shell for the container's user
-RUN chsh -s /usr/bin/fish
+USER ${USERNAME}
+WORKDIR /home/${USERNAME}
 
-# Switch to the new user
-USER $USERNAME
-WORKDIR /home/$USERNAME
+RUN curl --fail --silent --show-error --location \
+        https://raw.githubusercontent.com/jorgebucaran/fisher/main/functions/fisher.fish \
+        | source=/dev/stdin fish -c 'source $source; fisher install jorgebucaran/fisher edc/bass'
 
-# Install Fisher package manager for fish
-RUN fish -c "curl -sL https://raw.githubusercontent.com/jorgebucaran/fisher/main/functions/fisher.fish | source && fisher install jorgebucaran/fisher"
-# Install bass to use bash commands in fish
-RUN fish -c "fisher install edc/bass"
+# Match the host's highlighting for recognized commands.
+RUN fish -c 'set -U fish_color_command blue'
+
+CMD ["fish"]

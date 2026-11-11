@@ -1,0 +1,10 @@
+# Numerical simulation without a GPU or native viewer.
+services:
+  mujoco:
+    image: ${CONTAINER_NAME:-lunar-rover-jazzy-mujoco}:latest
+    container_name: ${CONTAINER_NAME:-lunar-rover-jazzy-mujoco}
+    volumes:
+      - ${PROJECT_ROOT:-../..}/mujoco:/home/${USERNAME:-developer}/mujoco
+    working_dir: /home/${USERNAME:-developer}/mujoco
+    init: true
+    command: ["sleep", "infinity"]

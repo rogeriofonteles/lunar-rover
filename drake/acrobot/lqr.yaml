@@ -1,0 +1,26 @@
+# Maximum absolute elbow torque in N m when clipping is enabled.
+torque_limit_nm: 3.0
+# State and torque costs. Small R permits stronger recovery torques when unclipped.
+Q:
+  - [10.0, 0.0, 0.0, 0.0]
+  - [0.0, 10.0, 0.0, 0.0]
+  - [0.0, 0.0, 1.0, 0.0]
+  - [0.0, 0.0, 0.0, 1.0]
+R: 0.01
+mode: ilqr_receding # infinite, finite, receding, ilqr, or ilqr_receding
+horizon: 300
+timestep: 0.01  # seconds
+steps: 300
+clip_torque: false
+headless: false
+wait: true
+# [theta1 (rad), theta2 (rad), theta1dot (rad/s), theta2dot (rad/s)]
+initial_state: [0.0, 0.0, 0.0, 0.0]
+
+# iLQR numerical settings (ilqr and ilqr_receding).
+ilqr_initialization: auto # collocation seed for larger angular offsets; lqr or collocation also available
+ilqr_max_iterations: 50
+ilqr_tolerance: 1.0e-6
+ilqr_regularization: 1.0e-5
+ilqr_state_damping: 1.0
+ilqr_control_damping: 1.0

@@ -1,0 +1,5 @@
+{
+  "stomp_commit": "b1a87c80f7338caae25a5c689b876da15492aa75",
+  "example_robot_data_commit": "01645279cbca89c9f9cce00a9b1452bf022a8da1",
+  "mesh_processing": "Binary STL converted to OBJ; Drake uses convex hulls for proximity."
+}

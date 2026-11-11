@@ -1,0 +1,24 @@
+{
+  "include": ["drake", "mujoco", "lunar_rover/src"],
+  "exclude": [".python-libs", "**/__pycache__", "lunar_rover/build", "lunar_rover/install", "lunar_rover/log"],
+  "typeCheckingMode": "off",
+  "reportMissingModuleSource": false,
+  "useLibraryCodeForTypes": true,
+  "executionEnvironments": [
+    {
+      "root": "mujoco",
+      "pythonVersion": "3.12",
+      "extraPaths": [".python-libs/mujoco"]
+    },
+    {
+      "root": "drake",
+      "pythonVersion": "3.14",
+      "extraPaths": [".python-libs/drake"]
+    },
+    {
+      "root": "lunar_rover",
+      "pythonVersion": "3.12",
+      "extraPaths": [".python-libs/ros"]
+    }
+  ]
+}

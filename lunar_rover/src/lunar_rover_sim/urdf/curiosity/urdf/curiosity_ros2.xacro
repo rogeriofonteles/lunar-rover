@@ -1,0 +1,28 @@
+<?xml version="1.0"?>
+<robot name="curiosity_mars_rover" xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+    <!-- Package path argument - passed from launch file -->
+    <xacro:arg name="mesh_path" default=""/>
+    <xacro:property name="mesh_prefix" value="$(arg mesh_path)"/>
+
+    <!-- Inertia matrices -->
+    <xacro:include filename="$(arg mesh_path)/urdf/macros.xacro" />
+    <!-- Robot constants and properties -->
+    <xacro:include filename="$(arg mesh_path)/urdf/curiosity_mars_rover_properties.xacro" />
+    <!-- Gazebo Harmonic plugins -->
+    <xacro:include filename="$(arg mesh_path)/urdf/curiosity_gazebo_harmonic.xacro" />
+    <!-- Chasis -->
+    <xacro:include filename="$(arg mesh_path)/urdf/chassis_ros2.xacro" />
+    <!-- Wheel Groups -->
+    <xacro:include filename="$(arg mesh_path)/urdf/wheel_ros2.xacro" />
+    <xacro:include filename="$(arg mesh_path)/urdf/left_wheel_group_ros2.xacro" />
+    <xacro:include filename="$(arg mesh_path)/urdf/right_wheel_group_ros2.xacro" />
+
+    <chassis_body/>
+    <left_wheel_tree/>
+    <right_wheel_tree/>
+
+    <!-- Gazebo Harmonic differential drive plugin -->
+    <gazebo_plugins/>
+
+</robot>

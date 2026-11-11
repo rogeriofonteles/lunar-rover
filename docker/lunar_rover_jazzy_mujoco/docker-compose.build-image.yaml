@@ -1,0 +1,10 @@
+services:
+  mujoco:
+    build:
+      context: ../..
+      dockerfile: docker/lunar_rover_jazzy_mujoco/Dockerfile
+      args:
+        USERNAME: ${USERNAME:-developer}
+        MY_UID: ${MY_UID:-1000}
+        MY_GID: ${MY_GID:-1000}
+    image: ${CONTAINER_NAME:-lunar-rover-jazzy-mujoco}:latest

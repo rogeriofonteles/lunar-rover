@@ -1,3 +1,20 @@
 lunar_rover/build
 lunar_rover/install
 lunar_rover/log
+.python-libs/
+
+# Machine-local settings, caches and temporary files.
+.env
+.env.*
+!.env.example
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+/tmp/
+/-p
+.DS_Store
+
+# Preserve the local Curiosity repository metadata; vendor its working files.
+/lunar_rover/src/lunar_rover_sim/urdf/curiosity/.git/

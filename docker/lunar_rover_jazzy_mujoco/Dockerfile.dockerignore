@@ -1,0 +1,6 @@
+**
+!mujoco/
+!mujoco/**
+mujoco/**/__pycache__/
+mujoco/**/*.pyc
+mujoco/output/

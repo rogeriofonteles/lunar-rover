@@ -6,4 +6,5 @@ services:
       args:
         USERNAME: ${USERNAME}
         MY_UID: ${MY_UID}
+        MY_GID: ${MY_GID}
     image: ${CONTAINER_NAME}:v0.0.3

@@ -1,0 +1,14 @@
+# CPU physics + browser-based Meshcat; no NVIDIA/X11/device prerequisites.
+services:
+  drake:
+    image: ${CONTAINER_NAME:-lunar-rover-jazzy-drake}:latest
+    container_name: ${CONTAINER_NAME:-lunar-rover-jazzy-drake}
+    environment:
+      TERM: xterm-256color
+    volumes:
+      - ${PROJECT_ROOT:-../..}/drake:/home/${USERNAME:-developer}/drake
+    ports:
+      - 7000-7010:7000-7010
+    working_dir: /home/${USERNAME:-developer}/drake
+    init: true
+    command: ["sleep", "infinity"]

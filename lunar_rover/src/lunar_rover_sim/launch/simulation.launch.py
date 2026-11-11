@@ -13,7 +13,7 @@ def generate_launch_description():
     pkg_lunar_rover_sim = get_package_share_directory('lunar_rover_sim')
     pkg_ros_gz_sim = get_package_share_directory('ros_gz_sim')
 
-    # Paths
+    # Paths - using Perseverance SDF model (works with Gazebo Harmonic)
     perseverance_model = os.path.join(pkg_lunar_rover_sim, 'urdf', 'perseverance', 'model.sdf')
     world_file = os.path.join(pkg_lunar_rover_sim, 'worlds', 'mars_world.sdf')
 
@@ -40,9 +40,6 @@ def generate_launch_description():
     )
 
     # Spawn Perseverance rover on top of terrain
-    # Terrain Z range is -24 to +4, surface is around z=0 to z=4
-    # Wheels are at z=0.26 with radius 0.27, so wheel bottom at z=-0.01
-    # Spawn at z=5 to drop onto terrain surface
     spawn_robot = Node(
         package='ros_gz_sim',
         executable='create',

@@ -1,0 +1,33 @@
+# State ordering: q1..q6 (rad), v1..v6 (rad/s). Motors command N m.
+mode: infinite # infinite, finite, receding, ilqr, ilqr_receding, mpc
+button: null # red, yellow, green: overrides target_state, preserves initial_state
+discretization: zoh # euler or zoh: linear LQR/MPC model only
+solver: dual_ascent # dual_ascent, sqp (exact Hessian), slsqp (SciPy), for mode: mpc
+timestep: 0.02
+physics_timestep: 0.002
+horizon: 20
+steps: 200
+# Fixed randomized pose, roughly 1–1.8 rad from the goal on each joint.
+# Starts at rest; kept fixed so controller comparisons use the same initial state.
+initial_state: [1.597, -0.895, 0.973, 1.528, 1.285, -1.778, 0, 0, 0, 0, 0, 0]
+target_state: [0, 0.4, -0.7, 0, 0.3, 0, 0, 0, 0, 0, 0, 0]
+torque_limit: [80, 80, 60, 25, 25, 15]
+Q: [50, 50, 50, 50, 50, 50, 2, 2, 2, 2, 2, 2]
+R: [0.05, 0.05, 0.05, 0.05, 0.05, 0.05]
+terminal_cost: null # null uses local discrete DARE value matrix
+ilqr_max_iterations: 30
+ilqr_tolerance: 1.0e-6
+ilqr_regularization: 1.0e-5
+ilqr_state_damping: 1.0
+ilqr_control_damping: 1.0
+mpc_max_iterations: 1000 # dual sweeps, SQP active-set iterations, or SLSQP iterations
+mpc_tolerance: 1.0e-6
+headless: false
+maximize: true # use the display's native window resolution
+viewer_ui: false # hide side panels to give the scene more screen space
+wait: true
+realtime: true # pace viewer playback; optimization can run slower than real time
+output: null # optional .npz trajectory and sibling .json summary
+snapshot: null # optional final-pose PNG (MUJOCO_GL=egl for headless GPU rendering)
+snapshot_width: 2560
+snapshot_height: 1920

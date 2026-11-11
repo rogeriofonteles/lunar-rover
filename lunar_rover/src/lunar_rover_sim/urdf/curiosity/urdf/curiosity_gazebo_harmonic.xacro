@@ -1,0 +1,60 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+  <xacro:macro name="gazebo_plugins" params="">
+    <!-- Gazebo Harmonic Differential Drive Plugin (6-wheel skid-steer) -->
+    <gazebo>
+      <plugin filename="gz-sim-diff-drive-system"
+              name="gz::sim::systems::DiffDrive">
+        <left_joint>front_wheel_L_joint</left_joint>
+        <left_joint>middle_wheel_L_joint</left_joint>
+        <left_joint>back_wheel_L_joint</left_joint>
+        <right_joint>front_wheel_R_joint</right_joint>
+        <right_joint>middle_wheel_R_joint</right_joint>
+        <right_joint>back_wheel_R_joint</right_joint>
+        <wheel_separation>2.0</wheel_separation>
+        <wheel_radius>0.242647</wheel_radius>
+        <odom_publish_frequency>50</odom_publish_frequency>
+        <topic>cmd_vel</topic>
+        <odom_topic>odom</odom_topic>
+        <tf_topic>tf</tf_topic>
+        <frame_id>odom</frame_id>
+        <child_frame_id>base_footprint</child_frame_id>
+      </plugin>
+
+      <!-- Joint State Publisher Plugin -->
+      <plugin filename="gz-sim-joint-state-publisher-system"
+              name="gz::sim::systems::JointStatePublisher">
+        <topic>joint_states</topic>
+      </plugin>
+    </gazebo>
+
+    <!-- Wheel friction settings -->
+    <gazebo reference="front_wheel_L">
+      <mu1>1.0</mu1>
+      <mu2>1.0</mu2>
+    </gazebo>
+    <gazebo reference="middle_wheel_L">
+      <mu1>1.0</mu1>
+      <mu2>1.0</mu2>
+    </gazebo>
+    <gazebo reference="back_wheel_L">
+      <mu1>1.0</mu1>
+      <mu2>1.0</mu2>
+    </gazebo>
+    <gazebo reference="front_wheel_R">
+      <mu1>1.0</mu1>
+      <mu2>1.0</mu2>
+    </gazebo>
+    <gazebo reference="middle_wheel_R">
+      <mu1>1.0</mu1>
+      <mu2>1.0</mu2>
+    </gazebo>
+    <gazebo reference="back_wheel_R">
+      <mu1>1.0</mu1>
+      <mu2>1.0</mu2>
+    </gazebo>
+
+  </xacro:macro>
+
+</robot>
